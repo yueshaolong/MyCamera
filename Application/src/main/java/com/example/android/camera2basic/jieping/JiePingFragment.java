@@ -1,24 +1,13 @@
-package com.example.android.camera2basic.camera1;
+package com.example.android.camera2basic.jieping;
 
-import android.Manifest;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Paint.Align;
-import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.net.Uri;
@@ -26,10 +15,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.text.Layout;
-import android.text.StaticLayout;
-import android.text.TextPaint;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -38,7 +23,6 @@ import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -46,14 +30,10 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.example.android.camera2basic.CameraActivity;
 import com.example.android.camera2basic.R;
-import com.example.android.camera2basic.camera2.AutoFitTextureView;
-import com.example.android.camera2basic.camera2.CameraHelper;
-import com.example.android.camera2basic.camera2.ICamera;
-import com.example.android.camera2basic.camera2.ICamera.FlashState;
-import com.example.android.camera2basic.camera2.ICamera.TakePhotoListener;
+import com.example.android.camera2basic.camera1.CameraPreview;
+import com.example.android.camera2basic.camera1.OverCameraView;
+import com.example.android.camera2basic.camera1.SystemUtil;
 import com.example.android.camera2basic.camera2.SingleMediaScanner;
 
 import java.io.BufferedOutputStream;
@@ -62,17 +42,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-import java.util.logging.Logger;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
-import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 
-public class Camera1BasicFragment extends Fragment
+public class JiePingFragment extends Fragment
         implements View.OnClickListener, OnTouchListener{
 
     private static final String TAG = "Camera1BasicFragment";
@@ -116,8 +91,8 @@ public class Camera1BasicFragment extends Fragment
     private CameraPreview cameraPreview;
     private RelativeLayout rl;
 
-    public static Camera1BasicFragment newInstance() {
-        return new Camera1BasicFragment();
+    public static JiePingFragment newInstance() {
+        return new JiePingFragment();
     }
 
     @Override
@@ -263,8 +238,8 @@ public class Camera1BasicFragment extends Fragment
         isFlashing = !isFlashing;
         switch_flash.setImageResource(isFlashing ? R.drawable.flash_open : R.drawable.flash_close);
         try {
-            Camera.Parameters parameters = mCamera.getParameters();
-            parameters.setFlashMode(isFlashing ? Camera.Parameters.FLASH_MODE_TORCH : Camera.Parameters.FLASH_MODE_OFF);
+            Parameters parameters = mCamera.getParameters();
+            parameters.setFlashMode(isFlashing ? Parameters.FLASH_MODE_TORCH : Parameters.FLASH_MODE_OFF);
             mCamera.setParameters(parameters);
         } catch (Exception e) {
             Toast.makeText(getActivity(), "该设备不支持闪光灯", Toast.LENGTH_SHORT);
@@ -342,56 +317,35 @@ public class Camera1BasicFragment extends Fragment
         mPaint.setColor(Color.WHITE);
         mPaint.setTextSize(dp2px(getActivity(),40));
 
-        //矩形背景
-//        Paint bgRect=new Paint();
-//        bgRect.setStyle(Paint.Style.FILL);
-//        bgRect.setColor(Color.YELLOW);
-//        RectF rectF=new RectF(dp2px(getActivity(),60), mNewBitmap.getHeight()-dp2px(getActivity(),260),
-//                mNewBitmap.getWidth()-dp2px(getActivity(),100), mNewBitmap.getHeight());
-//        mCanvas.drawRect(rectF, bgRect);
-
         //水印的位置坐标
+//        mPaint.setTextAlign(Paint.Align.LEFT);
         //根据路径得到Typeface
 //        Typeface typeface=Typeface.createFromAsset(getActivity().getAssets(), "fonts/xs.ttf");
 //        mPaint.setTypeface(typeface);
 //        mCanvas.rotate(-45, (mNewBitmap2.getWidth() * 1) / 2, (mNewBitmap2.getHeight() * 1) / 2);
+//        mCanvas.drawText(mFormat, (mNewBitmap.getWidth() * 1) / 2, (mNewBitmap.getHeight() * 1) / 2, mPaint);
+        String mFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss EEEE").format(new Date());
+        mCanvas.drawText(mFormat, dp2px(getActivity(),20),
+                mNewBitmap.getHeight()-dp2px(getActivity(),100), mPaint);
+        //矩形背景
+        Paint bgRect=new Paint();
+        bgRect.setStyle(Paint.Style.FILL);
+        bgRect.setColor(Color.YELLOW);
+        RectF rectF=new RectF(200, 200, 800, 600);
+        mCanvas.drawRect(rectF, bgRect);
 
-        //画时间
-        drawPosition(mNewBitmap, mCanvas,
-                new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()),
-                R.drawable.ic_launcher,
-                dp2px(getActivity(),20),
-                mNewBitmap.getHeight()-dp2px(getActivity(),260),
-                true);
-        //画位置
-        drawPosition(mNewBitmap, mCanvas,
-                "位置 "+" 纬度:"+123+"  经度:" + "但是覅哦粉红色的开发和上岛咖啡纳斯达克快点发货速度发货速度放",
-                R.drawable.ic_save,
-                dp2px(getActivity(),20),
-                mNewBitmap.getHeight()-dp2px(getActivity(),200),
-                false);
+        mFormat = "位置 "+" 纬度:"+123+"  经度:"+456;
+        mPaint.setColor(Color.RED);
+        mPaint.setTextSize(dp2px(getActivity(),30));
+        mCanvas.drawText(mFormat, dp2px(getActivity(),60),
+                mNewBitmap.getHeight()-dp2px(getActivity(),50), mPaint);
 
-        //画项目名称
-        drawPosition(mNewBitmap, mCanvas,
-                "XXX项目用户开启定位后，获取用户当前位置和时间，时间到分即可，显示如图示",
-                R.drawable.ic_save,
-                dp2px(getActivity(),20),
-                mNewBitmap.getHeight()-dp2px(getActivity(),100),
-                false);
-
-
-        mCanvas.save();
-        mCanvas.restore();
-        return mNewBitmap2;
-    }
-
-    private void drawPosition(Bitmap mNewBitmap, Canvas mCanvas, String mFormat, int drawable, int x, int y, boolean isTime) {
-        Bitmap resource = BitmapFactory.decodeResource(getActivity().getResources(), drawable);
+        Bitmap resource = BitmapFactory.decodeResource(getActivity().getResources(), R.drawable.ic_save);
         int width = resource.getWidth();
         int height = resource.getHeight();
         // 设置想要的大小
-        int newWidth = isTime?dp2px(getActivity(),34):dp2px(getActivity(),24);
-        int newHeight = isTime?dp2px(getActivity(),34):dp2px(getActivity(),24);
+        int newWidth = dp2px(getActivity(),30);
+        int newHeight = dp2px(getActivity(),30);
         // 计算缩放比例
         float scaleWidth = ((float) newWidth) / width;
         float scaleHeight = ((float) newHeight) / height;
@@ -400,35 +354,13 @@ public class Camera1BasicFragment extends Fragment
         matrix2.postScale(scaleWidth, scaleHeight);
         // 得到新的图片
         resource = Bitmap.createBitmap(resource, 0, 0, width, height, matrix2, true);
-        mCanvas.drawBitmap(resource, x, y+dp2px(getActivity(),10), null);
+        mCanvas.drawBitmap(resource, dp2px(getActivity(),20),
+                mNewBitmap.getHeight()-dp2px(getActivity(),80), null);
 
-        TextPaint textPaint = new TextPaint();
-        textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(isTime?dp2px(getActivity(),40):dp2px(getActivity(),30));
-        StaticLayout staticLayout = new StaticLayout(mFormat, textPaint,
-                mNewBitmap.getWidth()-dp2px(getActivity(),100),
-                Layout.Alignment.ALIGN_NORMAL, 1, 0, true);
+
         mCanvas.save();
-        mCanvas.translate(3*x, y);
-        staticLayout.draw(mCanvas);
         mCanvas.restore();
-
-        for (int i = 0; i < staticLayout.getLineCount(); i++) {
-            Rect rect = new Rect();
-            Paint bgRect=new Paint();
-            bgRect.setStyle(Paint.Style.FILL);
-            bgRect.setColor(Color.YELLOW);
-            staticLayout.getLineBounds(i, rect);
-            mCanvas.drawRect(rect, bgRect);
-        }
-
-        Rect rect = new Rect();
-        float v = textPaint.measureText(mFormat, 0, mFormat.length() - 1);
-//        Paint bgRect=new Paint();
-        textPaint.setStyle(Paint.Style.FILL);
-        textPaint.setColor(Color.parseColor("#66FFFF00"));
-        RectF rectF=new RectF(3*x, y, x+v, y+(isTime?dp2px(getActivity(),40):dp2px(getActivity(),30))+dp2px(getActivity(),10));
-        mCanvas.drawRect(rectF, textPaint);
+        return mNewBitmap2;
     }
 
     public int sp2px(Context context, float spValue) {

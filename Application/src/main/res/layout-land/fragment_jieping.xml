@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <!--相机预览视图-->
+
     <FrameLayout
         android:id="@+id/camera_preview_layout"
-        android:layout_marginBottom="120dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
@@ -16,7 +16,6 @@
         android:layout_marginTop="16dp"
         android:layout_width="28dp"
         android:layout_height="24dp"
-        android:layout_alignParentRight="true"
         android:layout_marginRight="16dp"
         android:scaleType="center"
         android:src="@drawable/flash_close"/>
@@ -24,30 +23,27 @@
         android:id="@+id/preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="120dp"
         android:scaleType="fitCenter"
         android:visibility="gone"
         android:src="@color/control_background"
         />
     <LinearLayout
         android:id="@+id/ll_take_photo"
-        android:layout_width="match_parent"
-        android:layout_height="58dp"
-        android:layout_alignParentBottom="true"
+        android:layout_width="58dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
         android:gravity="center"
         android:visibility="visible"
-        android:layout_marginBottom="36dp"
-        android:orientation="horizontal">
+        android:layout_marginRight="36dp"
+        android:orientation="vertical">
+
         <ImageView
-            android:id="@+id/iv_back"
-            android:layout_width="0dp"
+            android:id="@+id/switch_camera"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_height="58dp"
-            android:padding="16dp"
-            android:onClick="close"
-            android:scaleType="centerInside"
-            android:layout_centerVertical="true"
-            android:src="@drawable/icon_back" />
+            android:layout_width="58dp"
+            android:scaleType="center"
+            android:src="@drawable/ic_switch_camera"/>
         <ImageView
             android:id="@+id/take_photo"
             android:layout_width="58dp"
@@ -57,12 +53,15 @@
             android:scaleType="fitXY"
             android:src="@drawable/ic_camera"/>
         <ImageView
-            android:id="@+id/switch_camera"
-            android:layout_width="0dp"
+            android:id="@+id/iv_back"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_height="58dp"
-            android:scaleType="center"
-            android:src="@drawable/ic_switch_camera"/>
+            android:layout_width="58dp"
+            android:padding="16dp"
+            android:onClick="close"
+            android:scaleType="centerInside"
+            android:layout_centerVertical="true"
+            android:src="@drawable/icon_back" />
     </LinearLayout>
     <LinearLayout
         android:id="@+id/ll_save_delete"

@@ -1,44 +1,40 @@
-package com.example.android.camera2basic.camera1;
+package com.example.android.camera2basic.jieping;
 
-import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Paint.Align;
-import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
+import android.media.Image;
+import android.media.Image.Plane;
+import android.media.ImageReader;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.text.Layout;
-import android.text.StaticLayout;
-import android.text.TextPaint;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
-import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -46,38 +42,28 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.example.android.camera2basic.CameraActivity;
 import com.example.android.camera2basic.R;
-import com.example.android.camera2basic.camera2.AutoFitTextureView;
-import com.example.android.camera2basic.camera2.CameraHelper;
-import com.example.android.camera2basic.camera2.ICamera;
-import com.example.android.camera2basic.camera2.ICamera.FlashState;
-import com.example.android.camera2basic.camera2.ICamera.TakePhotoListener;
+import com.example.android.camera2basic.camera1.OverCameraView;
+import com.example.android.camera2basic.camera1.SystemUtil;
 import com.example.android.camera2basic.camera2.SingleMediaScanner;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-import java.util.logging.Logger;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
-import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
 
-public class Camera1BasicFragment extends Fragment
-        implements View.OnClickListener, OnTouchListener{
-
+public class JiePingActivity extends AppCompatActivity implements OnClickListener, OnTouchListener {
     private static final String TAG = "Camera1BasicFragment";
     private static final int REQUEST_CAMERA_PERMISSION = 1;
     private static final String FRAGMENT_DIALOG = "dialog";
+    private static final int REQUEST_MEDIA_PROJECTION = 0;
     private ImageView preview;
     private LinearLayout ll_take_photo;
     private LinearLayout ll_save_delete;
@@ -115,36 +101,33 @@ public class Camera1BasicFragment extends Fragment
     private Parameters mParameters;
     private CameraPreview cameraPreview;
     private RelativeLayout rl;
-
-    public static Camera1BasicFragment newInstance() {
-        return new Camera1BasicFragment();
-    }
+    private MediaProjectionManager mMediaProjectionManager;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_camera1_basic, container, false);
-    }
-
-    @Override
-    public void onViewCreated(final View view, Bundle savedInstanceState) {
-        rl = view.findViewById(R.id.rl);
-        mPreviewLayout = view.findViewById(R.id.camera_preview_layout);
-        preview = view.findViewById(R.id.preview);
-        ll_take_photo = view.findViewById(R.id.ll_take_photo);
-        ll_save_delete = view.findViewById(R.id.ll_save_delete);
-        switch_flash = view.findViewById(R.id.switch_flash);
-        ImageView iv_back = view.findViewById(R.id.iv_back);
-        ImageView take_photo = view.findViewById(R.id.take_photo);
-        ImageView switch_camera = view.findViewById(R.id.switch_camera);
-        ImageView delete = view.findViewById(R.id.delete);
-        ImageView save = view.findViewById(R.id.save);
-        view.findViewById(R.id.switch_flash).setOnClickListener(this);
-        view.findViewById(R.id.iv_back).setOnClickListener(this);
-        view.findViewById(R.id.take_photo).setOnClickListener(this);
-        view.findViewById(R.id.switch_camera).setOnClickListener(this);
-        view.findViewById(R.id.delete).setOnClickListener(this);
-        view.findViewById(R.id.save).setOnClickListener(this);
-        view.findViewById(R.id.preview).setOnTouchListener(this);
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.fragment_jieping);
+        getScreenBrightness();
+        mMediaProjectionManager = (MediaProjectionManager)
+                getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        rl = findViewById(R.id.rl);
+        mPreviewLayout = findViewById(R.id.camera_preview_layout);
+        preview = findViewById(R.id.preview);
+        ll_take_photo = findViewById(R.id.ll_take_photo);
+        ll_save_delete = findViewById(R.id.ll_save_delete);
+        switch_flash = findViewById(R.id.switch_flash);
+        ImageView iv_back = findViewById(R.id.iv_back);
+        ImageView take_photo = findViewById(R.id.take_photo);
+        ImageView switch_camera = findViewById(R.id.switch_camera);
+        ImageView delete = findViewById(R.id.delete);
+        ImageView save = findViewById(R.id.save);
+        findViewById(R.id.switch_flash).setOnClickListener(this);
+        findViewById(R.id.iv_back).setOnClickListener(this);
+        findViewById(R.id.take_photo).setOnClickListener(this);
+        findViewById(R.id.switch_camera).setOnClickListener(this);
+        findViewById(R.id.delete).setOnClickListener(this);
+        findViewById(R.id.save).setOnClickListener(this);
+        findViewById(R.id.preview).setOnTouchListener(this);
         initOrientate();
     }
     //增加传感器
@@ -156,9 +139,10 @@ public class Camera1BasicFragment extends Fragment
      */
     private void  initOrientate(){
         if(mOrientationEventListener == null){
-            mOrientationEventListener = new OrientationEventListener(getActivity()) {
+            mOrientationEventListener = new OrientationEventListener(this) {
                 @Override
                 public void onOrientationChanged(int orientation) {
+                    System.out.println("------->"+orientation);
                     // i的范围是0-359
                     // 屏幕左边在顶部的时候 i = 90;
                     // 屏幕顶部在底部的时候 i = 180;
@@ -181,21 +165,14 @@ public class Camera1BasicFragment extends Fragment
 
     }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        getScreenBrightness();
-//        cameraPreview.setOnTouchListener(this);
-    }
-
     /**
      * 加入调整亮度
      */
     private void getScreenBrightness() {
-        WindowManager.LayoutParams lp = getActivity().getWindow().getAttributes();
+        WindowManager.LayoutParams lp = this.getWindow().getAttributes();
         //screenBrightness的值是0.0-1.0 从0到1.0 亮度逐渐增大 如果是-1，那就是跟随系统亮度
         lp.screenBrightness = Float.valueOf(200) * (1f / 255f);
-        getActivity().getWindow().setAttributes(lp);
+        this.getWindow().setAttributes(lp);
     }
     private void createFile() {
         String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
@@ -227,13 +204,62 @@ public class Camera1BasicFragment extends Fragment
         isTakePhoto = true;
         ll_take_photo.setVisibility(View.GONE);
         ll_save_delete.setVisibility(View.VISIBLE);
-        //调用相机拍照
-        mCamera.takePicture(null, null, null, (data, camera1) -> {
-            imageData = data;
-            //停止预览
-            mCamera.stopPreview();
-            getPhoto();
-        });
+    }
+    //截屏成功后再onactivityResult回调,截取屏幕显示
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_MEDIA_PROJECTION) {
+            if (resultCode != Activity.RESULT_OK) {
+                Toast.makeText(this, "用户取消了", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            final ImageReader mImageReader = ImageReader.newInstance(
+                    mPreviewLayout.getWidth(),
+                    mPreviewLayout.getHeight(), ImageFormat.JPEG, 2);
+            MediaProjection mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data);
+            VirtualDisplay mVirtualDisplay = mMediaProjection.createVirtualDisplay("ScreenCapture",
+                    mPreviewLayout.getWidth(),
+                    mPreviewLayout.getHeight(),
+                    getResources().getDisplayMetrics().densityDpi,
+                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                    mImageReader.getSurface(), null, null);
+
+            String mImageName = System.currentTimeMillis() + ".png";
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Image image = null;
+                    if (VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
+                        image = mImageReader.acquireLatestImage();
+                    }
+                    if (image == null) {
+                        return;
+                    }
+                    if (VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
+                        int width = image.getWidth();
+                        int height = image.getHeight();
+                        final Plane[] planes = image.getPlanes();
+                        final ByteBuffer buffer = planes[0].getBuffer();
+                        int pixelStride = planes[0].getPixelStride();
+                        int rowStride = planes[0].getRowStride();
+                        int rowPadding = rowStride - pixelStride * width;
+                        Bitmap mBitmap;
+                        mBitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Config.ARGB_8888);
+                        mBitmap.copyPixelsFromBuffer(buffer);
+                        mBitmap = Bitmap.createBitmap(mBitmap, 0, 0, width, height);
+                        image.close();
+
+                        if (mBitmap != null) {
+                            //拿到mitmap
+                            final Bitmap finalMBitmap = mBitmap;
+                            preview.setImageBitmap(finalMBitmap);
+                        }
+                    }
+
+                }
+            }, 300);
+        }
     }
     private void getPhoto() {
         createFile();
@@ -251,7 +277,7 @@ public class Camera1BasicFragment extends Fragment
                     Bitmap mBitmap = BitmapFactory.decodeFile(mFile.getPath());
                     //添加时间水印
                     newBitmap = AddTimeWatermark(mBitmap);
-//                    Glide.with(getContext()).load(newBitmap).into(preview);
+//                    Glide.with(this).load(newBitmap).into(preview);
                     setPreview(newBitmap);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -267,7 +293,7 @@ public class Camera1BasicFragment extends Fragment
             parameters.setFlashMode(isFlashing ? Camera.Parameters.FLASH_MODE_TORCH : Camera.Parameters.FLASH_MODE_OFF);
             mCamera.setParameters(parameters);
         } catch (Exception e) {
-            Toast.makeText(getActivity(), "该设备不支持闪光灯", Toast.LENGTH_SHORT);
+            Toast.makeText(this, "该设备不支持闪光灯", Toast.LENGTH_SHORT);
         }
     }
     private void cancleSavePhoto() {
@@ -283,7 +309,7 @@ public class Camera1BasicFragment extends Fragment
         isTakePhoto = false;
     }
     private void setPreview(Bitmap bitmap) {
-        getActivity().runOnUiThread(new Runnable() {
+        this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 ll_take_photo.setVisibility(View.GONE);
@@ -292,13 +318,13 @@ public class Camera1BasicFragment extends Fragment
                 switch_flash.setVisibility(View.GONE);
                 preview.setVisibility(View.VISIBLE);
                 preview.setImageBitmap(bitmap);
-//                Glide.with(getContext()).load(bitmap).into(preview);
+//                Glide.with(this).load(bitmap).into(preview);
             }
         });
     }
     public Uri getUriFromFile(Context context, File file){
         if (Build.VERSION.SDK_INT >= 24) {
-            return FileProvider.getUriForFile(context,getContext().getPackageName()+".provider", file);
+            return FileProvider.getUriForFile(context,this.getPackageName()+".provider", file);
         } else {
             return Uri.fromFile(file);
         }
@@ -340,58 +366,37 @@ public class Camera1BasicFragment extends Fragment
         //添加文字
         Paint mPaint = new Paint();
         mPaint.setColor(Color.WHITE);
-        mPaint.setTextSize(dp2px(getActivity(),40));
-
-        //矩形背景
-//        Paint bgRect=new Paint();
-//        bgRect.setStyle(Paint.Style.FILL);
-//        bgRect.setColor(Color.YELLOW);
-//        RectF rectF=new RectF(dp2px(getActivity(),60), mNewBitmap.getHeight()-dp2px(getActivity(),260),
-//                mNewBitmap.getWidth()-dp2px(getActivity(),100), mNewBitmap.getHeight());
-//        mCanvas.drawRect(rectF, bgRect);
+        mPaint.setTextSize(dp2px(this,40));
 
         //水印的位置坐标
+//        mPaint.setTextAlign(Paint.Align.LEFT);
         //根据路径得到Typeface
-//        Typeface typeface=Typeface.createFromAsset(getActivity().getAssets(), "fonts/xs.ttf");
+//        Typeface typeface=Typeface.createFromAsset(this.getAssets(), "fonts/xs.ttf");
 //        mPaint.setTypeface(typeface);
 //        mCanvas.rotate(-45, (mNewBitmap2.getWidth() * 1) / 2, (mNewBitmap2.getHeight() * 1) / 2);
+//        mCanvas.drawText(mFormat, (mNewBitmap.getWidth() * 1) / 2, (mNewBitmap.getHeight() * 1) / 2, mPaint);
+        String mFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss EEEE").format(new Date());
+        mCanvas.drawText(mFormat, dp2px(this,20),
+                mNewBitmap.getHeight()-dp2px(this,100), mPaint);
+        //矩形背景
+        Paint bgRect=new Paint();
+        bgRect.setStyle(Paint.Style.FILL);
+        bgRect.setColor(Color.YELLOW);
+        RectF rectF=new RectF(200, 200, 800, 600);
+        mCanvas.drawRect(rectF, bgRect);
 
-        //画时间
-        drawPosition(mNewBitmap, mCanvas,
-                new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()),
-                R.drawable.ic_launcher,
-                dp2px(getActivity(),20),
-                mNewBitmap.getHeight()-dp2px(getActivity(),260),
-                true);
-        //画位置
-        drawPosition(mNewBitmap, mCanvas,
-                "位置 "+" 纬度:"+123+"  经度:" + "但是覅哦粉红色的开发和上岛咖啡纳斯达克快点发货速度发货速度放",
-                R.drawable.ic_save,
-                dp2px(getActivity(),20),
-                mNewBitmap.getHeight()-dp2px(getActivity(),200),
-                false);
+        mFormat = "位置 "+" 纬度:"+123+"  经度:"+456;
+        mPaint.setColor(Color.RED);
+        mPaint.setTextSize(dp2px(this,30));
+        mCanvas.drawText(mFormat, dp2px(this,60),
+                mNewBitmap.getHeight()-dp2px(this,50), mPaint);
 
-        //画项目名称
-        drawPosition(mNewBitmap, mCanvas,
-                "XXX项目用户开启定位后，获取用户当前位置和时间，时间到分即可，显示如图示",
-                R.drawable.ic_save,
-                dp2px(getActivity(),20),
-                mNewBitmap.getHeight()-dp2px(getActivity(),100),
-                false);
-
-
-        mCanvas.save();
-        mCanvas.restore();
-        return mNewBitmap2;
-    }
-
-    private void drawPosition(Bitmap mNewBitmap, Canvas mCanvas, String mFormat, int drawable, int x, int y, boolean isTime) {
-        Bitmap resource = BitmapFactory.decodeResource(getActivity().getResources(), drawable);
+        Bitmap resource = BitmapFactory.decodeResource(this.getResources(), R.drawable.ic_save);
         int width = resource.getWidth();
         int height = resource.getHeight();
         // 设置想要的大小
-        int newWidth = isTime?dp2px(getActivity(),34):dp2px(getActivity(),24);
-        int newHeight = isTime?dp2px(getActivity(),34):dp2px(getActivity(),24);
+        int newWidth = dp2px(this,30);
+        int newHeight = dp2px(this,30);
         // 计算缩放比例
         float scaleWidth = ((float) newWidth) / width;
         float scaleHeight = ((float) newHeight) / height;
@@ -400,35 +405,13 @@ public class Camera1BasicFragment extends Fragment
         matrix2.postScale(scaleWidth, scaleHeight);
         // 得到新的图片
         resource = Bitmap.createBitmap(resource, 0, 0, width, height, matrix2, true);
-        mCanvas.drawBitmap(resource, x, y+dp2px(getActivity(),10), null);
+        mCanvas.drawBitmap(resource, dp2px(this,20),
+                mNewBitmap.getHeight()-dp2px(this,80), null);
 
-        TextPaint textPaint = new TextPaint();
-        textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(isTime?dp2px(getActivity(),40):dp2px(getActivity(),30));
-        StaticLayout staticLayout = new StaticLayout(mFormat, textPaint,
-                mNewBitmap.getWidth()-dp2px(getActivity(),100),
-                Layout.Alignment.ALIGN_NORMAL, 1, 0, true);
+
         mCanvas.save();
-        mCanvas.translate(3*x, y);
-        staticLayout.draw(mCanvas);
         mCanvas.restore();
-
-        for (int i = 0; i < staticLayout.getLineCount(); i++) {
-            Rect rect = new Rect();
-            Paint bgRect=new Paint();
-            bgRect.setStyle(Paint.Style.FILL);
-            bgRect.setColor(Color.YELLOW);
-            staticLayout.getLineBounds(i, rect);
-            mCanvas.drawRect(rect, bgRect);
-        }
-
-        Rect rect = new Rect();
-        float v = textPaint.measureText(mFormat, 0, mFormat.length() - 1);
-//        Paint bgRect=new Paint();
-        textPaint.setStyle(Paint.Style.FILL);
-        textPaint.setColor(Color.parseColor("#66FFFF00"));
-        RectF rectF=new RectF(3*x, y, x+v, y+(isTime?dp2px(getActivity(),40):dp2px(getActivity(),30))+dp2px(getActivity(),10));
-        mCanvas.drawRect(rectF, textPaint);
+        return mNewBitmap2;
     }
 
     public int sp2px(Context context, float spValue) {
@@ -452,7 +435,7 @@ public class Camera1BasicFragment extends Fragment
                 switchFlash();
                 break;
             case R.id.iv_back:
-                getActivity().finish();
+                this.finish();
                 break;
             case R.id.switch_camera:
                 switchCamera();
@@ -462,12 +445,12 @@ public class Camera1BasicFragment extends Fragment
                 break;
             case R.id.save:
                 saveBitmapFile(newBitmap);
-                new SingleMediaScanner(getContext(), mFile.getAbsolutePath(), new SingleMediaScanner.ScanListener() {
+                new SingleMediaScanner(this, mFile.getAbsolutePath(), new SingleMediaScanner.ScanListener() {
                     @Override public void onScanFinish() {
                         Log.i("SingleMediaScanner", "scan finish!");
                     }
                 });
-                getActivity().finish();
+                this.finish();
                 break;
         }
     }
@@ -498,10 +481,10 @@ public class Camera1BasicFragment extends Fragment
     }
     private void openCamera() {
         mCamera = Camera.open(mCameraId);
-        cameraPreview = new CameraPreview(getActivity(), mCamera);
+        cameraPreview = new CameraPreview(this, mCamera);
         cameraPreview.setmCameraId(mCameraId);
         if (mOverCameraView == null) {
-            mOverCameraView = new OverCameraView(getActivity());
+            mOverCameraView = new OverCameraView(this);
         }
         mPreviewLayout.removeAllViews();
         mPreviewLayout.addView(cameraPreview);

@@ -7,7 +7,6 @@
     <!--相机预览视图-->
     <FrameLayout
         android:id="@+id/camera_preview_layout"
-        android:layout_marginBottom="120dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
@@ -24,7 +23,6 @@
         android:id="@+id/preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="120dp"
         android:scaleType="fitCenter"
         android:visibility="gone"
         android:src="@color/control_background"
