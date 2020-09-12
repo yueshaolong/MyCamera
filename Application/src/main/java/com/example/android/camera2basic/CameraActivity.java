@@ -17,6 +17,7 @@
 package com.example.android.camera2basic;
 
 import android.Manifest;
+import android.Manifest.permission;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -40,7 +41,13 @@ public class CameraActivity extends AppCompatActivity {
             }
         });
         new RxPermissions(this)
-                .request(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                .request(Manifest.permission.CAMERA,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        permission.ACCESS_COARSE_LOCATION,
+                        permission.ACCESS_FINE_LOCATION,
+                        permission.ACCESS_LOCATION_EXTRA_COMMANDS,
+                        permission.ACCESS_BACKGROUND_LOCATION
+                        )
                 .subscribe(granted -> {
                     if (granted) {
                         if (null == savedInstanceState) {
