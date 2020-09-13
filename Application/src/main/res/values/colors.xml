@@ -17,6 +17,7 @@
 <resources>
     <color name="control_background">#cc4285f4</color>
     <color name="black">#000000</color>
+    <color name="bg_gray">#FFEAEEF2</color>
         <color name="colorPrimary">#008577</color>
         <color name="colorPrimaryDark">#00574B</color>
         <color name="colorAccent">#D81B60</color>

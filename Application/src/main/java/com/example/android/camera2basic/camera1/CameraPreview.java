@@ -261,7 +261,17 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             }
         }
     }
-
+    public boolean isSupport(int faceOrBack) {
+        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+        for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
+            //返回相机信息
+            Camera.getCameraInfo(i, cameraInfo);
+            if (cameraInfo.facing == faceOrBack) {
+                return true;
+            }
+        }
+        return false;
+    }
     private boolean isSupportFocus(Camera.Parameters parameters, String focusMode) {
         boolean isSupport = false;
         //获取所支持对焦模式
