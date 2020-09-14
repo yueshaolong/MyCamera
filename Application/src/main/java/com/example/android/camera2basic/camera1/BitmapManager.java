@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
+import android.graphics.RectF;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Build;
@@ -104,32 +105,35 @@ public class BitmapManager {
         mPaint.setColor(Color.WHITE);
         mPaint.setTextSize(SystemUtil.dp2px(context,40));
 
-        //矩形背景
-//        Paint bgRect=new Paint();
-//        bgRect.setStyle(Paint.Style.FILL);
-//        bgRect.setColor(Color.YELLOW);
-//        RectF rectF=new RectF(SystemUtil.dp2px(context,60), mNewBitmap.getHeight()-SystemUtil.dp2px(context,260),
-//                mNewBitmap.getWidth()-SystemUtil.dp2px(context,100), mNewBitmap.getHeight());
-//        mCanvas.drawRect(rectF, bgRect);
 
         //根据路径得到Typeface
 //        Typeface typeface=Typeface.createFromAsset(context.getAssets(), "fonts/xs.ttf");
 //        mPaint.setTypeface(typeface);
 //        mCanvas.rotate(-45, (mNewBitmap2.getWidth() * 1) / 2, (mNewBitmap2.getHeight() * 1) / 2);
 
+        boolean isShuPing = takePhotoOrientation == 0 || takePhotoOrientation == 90;
+        //矩形背景
+        Paint bgRect=new Paint();
+        bgRect.setStyle(Paint.Style.FILL);
+        bgRect.setColor(context.getResources().getColor(R.color.gray));
+        RectF rectF=new RectF(SystemUtil.dp2px(context,10),
+                mNewBitmap.getHeight()-SystemUtil.dp2px(context,isShuPing?120:90),
+                mNewBitmap.getWidth()-SystemUtil.dp2px(context,50),
+                mNewBitmap.getHeight());
+        mCanvas.drawRect(rectF, bgRect);
         //画时间
         drawPosition(mNewBitmap, mCanvas,
                 new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()),
                 R.drawable.ic_launcher,
                 SystemUtil.dp2px(context,20),
-                mNewBitmap.getHeight()-SystemUtil.dp2px(context,260),
+                mNewBitmap.getHeight()-SystemUtil.dp2px(context,isShuPing?120:90),
                 true);
         //画位置
         drawPosition(mNewBitmap, mCanvas,
                 position,
                 R.drawable.ic_save,
                 SystemUtil.dp2px(context,20),
-                mNewBitmap.getHeight()-SystemUtil.dp2px(context,200),
+                mNewBitmap.getHeight()-SystemUtil.dp2px(context,isShuPing?90:60),
                 false);
 
         //画项目名称
@@ -137,7 +141,7 @@ public class BitmapManager {
                 project,
                 R.drawable.ic_save,
                 SystemUtil.dp2px(context,20),
-                mNewBitmap.getHeight()-SystemUtil.dp2px(context,100),
+                mNewBitmap.getHeight()-SystemUtil.dp2px(context,isShuPing?50:30),
                 false);
 
 
@@ -148,12 +152,13 @@ public class BitmapManager {
 
     public  void drawPosition(Bitmap mNewBitmap, Canvas mCanvas, String mFormat, int drawable, int x, int y, boolean isTime) {
         if (TextUtils.isEmpty(mFormat)) return;
+
         Bitmap resource = BitmapFactory.decodeResource(context.getResources(), drawable);
         int width = resource.getWidth();
         int height = resource.getHeight();
         // 设置想要的大小
-        int newWidth = isTime?SystemUtil.dp2px(context,34):SystemUtil.dp2px(context,24);
-        int newHeight = isTime?SystemUtil.dp2px(context,34):SystemUtil.dp2px(context,24);
+        int newWidth = isTime?SystemUtil.dp2px(context,16):SystemUtil.dp2px(context,12);
+        int newHeight = isTime?SystemUtil.dp2px(context,16):SystemUtil.dp2px(context,12);
         // 计算缩放比例
         float scaleWidth = ((float) newWidth) / width;
         float scaleHeight = ((float) newHeight) / height;
@@ -162,16 +167,16 @@ public class BitmapManager {
         matrix2.postScale(scaleWidth, scaleHeight);
         // 得到新的图片
         resource = Bitmap.createBitmap(resource, 0, 0, width, height, matrix2, true);
-        mCanvas.drawBitmap(resource, x, y+SystemUtil.dp2px(context,10), null);
+        mCanvas.drawBitmap(resource, x, y+SystemUtil.dp2px(context,2), null);
 
         TextPaint textPaint = new TextPaint();
         textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(isTime?SystemUtil.dp2px(context,34):SystemUtil.dp2px(context,24));
+        textPaint.setTextSize(isTime?SystemUtil.dp2px(context,16):SystemUtil.dp2px(context,12));
         StaticLayout staticLayout = new StaticLayout(mFormat, textPaint,
                 mNewBitmap.getWidth()-SystemUtil.dp2px(context,100),
                     Layout.Alignment.ALIGN_NORMAL, 1, 0, true);
         mCanvas.save();
-        mCanvas.translate(3*x, y);
+        mCanvas.translate(2*x, y);
         staticLayout.draw(mCanvas);
         mCanvas.restore();
 

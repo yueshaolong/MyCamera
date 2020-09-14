@@ -37,6 +37,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        System.out.println("------>surfaceCreated");
         try {
             initParameters();
             //把这个预览效果展示在SurfaceView上面
@@ -134,6 +135,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             int cameraSizeLength = localSizes.size();
             for (int n = 0; n < cameraSizeLength; n++) {
                 Camera.Size size = localSizes.get(n);
+                Log.d("图片-系统支持的尺寸:",size.width + "*" +size.height);
                 if (biggestSize == null) {
                     biggestSize = size;
                 } else if (size.width >= biggestSize.width && size.height >= biggestSize.height) {
@@ -158,7 +160,9 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             if (fitSize == null) {
                 fitSize = biggestSize;
             }
-            parameters.setPictureSize(fitSize.width, fitSize.height);
+            Log.d("图片尺寸:",fitSize.width + "*" + fitSize.height);
+//            parameters.setPictureSize(fitSize.width, fitSize.height);
+            parameters.setPictureSize(1920, 1080);
         }
 
     }
@@ -238,6 +242,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        System.out.println("------>surfaceChanged");
         if (holder.getSurface() == null) {
             return;
         }
@@ -253,13 +258,14 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        if (mCamera != null) {
-            if (isPreview) {
-                //正在预览
-                mCamera.stopPreview();
-                mCamera.release();
-            }
-        }
+        System.out.println("------>surfaceDestroyed");
+//        if (mCamera != null) {
+//            if (isPreview) {
+//                //正在预览
+//                mCamera.stopPreview();
+//                mCamera.release();
+//            }
+//        }
     }
     public boolean isSupport(int faceOrBack) {
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();

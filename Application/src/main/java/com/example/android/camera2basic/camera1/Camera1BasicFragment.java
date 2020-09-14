@@ -4,6 +4,8 @@ import android.animation.Animator;
 import android.animation.Animator.AnimatorListener;
 import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
@@ -15,6 +17,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.OrientationEventListener;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
@@ -40,6 +43,8 @@ import com.chad.library.adapter.base.viewholder.BaseViewHolder;
 import com.example.android.camera2basic.R;
 import com.example.android.camera2basic.camera1.BitmapManager.OnBitmapCompleteListener;
 import com.example.android.camera2basic.camera2.SingleMediaScanner;
+import com.example.android.camera2basic.weiget.EmptyCallback;
+import com.example.android.camera2basic.weiget.LoadingCallback;
 import com.kingja.loadsir.core.LoadService;
 import com.kingja.loadsir.core.LoadSir;
 import com.scwang.smartrefresh.layout.SmartRefreshLayout;
@@ -89,7 +94,7 @@ public class Camera1BasicFragment extends Fragment
     private LocationManager locationManager;
     private BitmapManager bitmapManager;
     private String position;
-    private String projectName;
+    private String projectName = "士大夫那我非法八十端口饭卡手动阀你看的身份那是肯定减肥士大夫那我非法八十端口饭卡手动阀你看的身份那是肯定减肥";
     private ImageView iv_back;
     private ImageView take_photo;
     private ImageView switch_camera;
@@ -233,6 +238,13 @@ public class Camera1BasicFragment extends Fragment
         //screenBrightness的值是0.0-1.0 从0到1.0 亮度逐渐增大 如果是-1，那就是跟随系统亮度
         lp.screenBrightness = Float.valueOf(200) * (1f / 255f);
         getActivity().getWindow().setAttributes(lp);
+        Configuration mConfiguration = this.getResources().getConfiguration(); //获取设置的配置信息
+        int ori = mConfiguration.orientation; //获取屏幕方向
+        if (ori == mConfiguration.ORIENTATION_LANDSCAPE) {
+            //横屏
+        } else if (ori == mConfiguration.ORIENTATION_PORTRAIT) {
+            //竖屏
+        }
     }
 
     @Override
@@ -259,6 +271,7 @@ public class Camera1BasicFragment extends Fragment
     OnPoiSearchListener poiSearchListener = new OnPoiSearchListener() {
         @Override
         public void onPoiSearched(PoiResult poiResult, int i) {
+            loadService.showSuccess();
             System.out.println("onPoiSearched i = "+i);
             System.out.println("onPoiSearched poiResult = "+poiResult.getPois());
             System.out.println("onPoiSearched poiResult = "+poiResult.getPageCount());
@@ -266,6 +279,7 @@ public class Camera1BasicFragment extends Fragment
             if (refreash) {
                     if (pois == null || pois.size() == 0) {
                         System.out.println("暂未找到兴趣点");
+                        loadService.showCallback(EmptyCallback.class);
                         return;
                     }
                 srl.finishRefresh(true);
@@ -313,19 +327,22 @@ public class Camera1BasicFragment extends Fragment
                     //定位完成的时间
                     sb.append("定位时间: " + SystemUtil.formatTime(location.getTime()) + "\n");
 
+                    //定位成功后就不再定位了
                     locationManager.destroyLocation();
-                    stv_time.setLeftString(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
                     position = location.getAddress();
-                    stv_position.setLeftString(position);
-                    tv_position.setText(location.getProvince()+location.getCity()+location.getDistrict());
                     //设置周边搜索的中心点以及半径
+                    tv_position.setText(location.getProvince()+location.getCity()+location.getDistrict());
                     locationManager.setBound(new LatLonPoint(location.getLatitude(),location.getLongitude()), 500);
+                    iv_search_position.setEnabled(true);
                 } else {
                     //定位失败
                     sb.append("定位失败" + "\n");
                     sb.append("错误码:" + location.getErrorCode() + "\n");
                     sb.append("错误信息:" + location.getErrorInfo() + "\n");
                     sb.append("错误描述:" + location.getLocationDetail() + "\n");
+
+                    position = "未识别该位置";
+                    iv_search_position.setEnabled(false);
                 }
                 sb.append("***定位质量报告***").append("\n");
                 sb.append("* WIFI开关：").append(location.getLocationQualityReport().isWifiAble() ? "开启":"关闭").append("\n");
@@ -336,11 +353,15 @@ public class Camera1BasicFragment extends Fragment
                 sb.append("回调时间: " + SystemUtil.formatTime(System.currentTimeMillis()));
 
                 //解析定位结果，
-                String result = sb.toString();
-                System.out.println("定位结果："+result);
+//                String result = sb.toString();
+//                System.out.println("定位结果："+result);
             } else {
                 System.out.println("定位结果："+"定位失败，loc is null");
+                position = "未识别该位置";
+                iv_search_position.setEnabled(false);
             }
+            stv_time.setLeftString(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
+            stv_position.setLeftString(position);
         }
     };
     private boolean refreash;
@@ -443,7 +464,7 @@ public class Camera1BasicFragment extends Fragment
                 break;
             case R.id.iv_search_position:
                 ll_rv.setVisibility(View.VISIBLE);
-                loadService.showSuccess();
+                loadService.showCallback(LoadingCallback.class);
                 locationManager.query(currentPage);
                 break;
             default:
@@ -471,17 +492,16 @@ public class Camera1BasicFragment extends Fragment
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
     }
     private void openCamera() {
+        mPreviewLayout.removeAllViews();
         mCamera = Camera.open(mCameraId);
         cameraPreview = new CameraPreview(getActivity(), mCamera);
         cameraPreview.setmCameraId(mCameraId);
         if (mOverCameraView == null) {
             mOverCameraView = new OverCameraView(getActivity());
         }
-        mPreviewLayout.removeAllViews();
         mPreviewLayout.addView(cameraPreview);
         mPreviewLayout.addView(mOverCameraView);
     }
