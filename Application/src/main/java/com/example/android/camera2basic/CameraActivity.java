@@ -70,14 +70,10 @@ public class CameraActivity extends AppCompatActivity {
                 .subscribe(granted -> {
                     if (granted) {
                         if (null == savedInstanceState) {
-
-                        }else {
-
+                            getSupportFragmentManager().beginTransaction()
+                                    .replace(R.id.container, Camera1BasicFragment.newInstance())
+                                    .commit();
                         }
-                        System.out.println("savedInstanceState--------->"+savedInstanceState);
-                        getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.container, Camera1BasicFragment.newInstance())
-                                .commit();
                     }
                 });
     }
