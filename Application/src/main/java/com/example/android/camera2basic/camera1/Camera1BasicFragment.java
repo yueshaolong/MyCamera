@@ -238,13 +238,6 @@ public class Camera1BasicFragment extends Fragment
         //screenBrightness的值是0.0-1.0 从0到1.0 亮度逐渐增大 如果是-1，那就是跟随系统亮度
         lp.screenBrightness = Float.valueOf(200) * (1f / 255f);
         getActivity().getWindow().setAttributes(lp);
-        Configuration mConfiguration = this.getResources().getConfiguration(); //获取设置的配置信息
-        int ori = mConfiguration.orientation; //获取屏幕方向
-        if (ori == mConfiguration.ORIENTATION_LANDSCAPE) {
-            //横屏
-        } else if (ori == mConfiguration.ORIENTATION_PORTRAIT) {
-            //竖屏
-        }
     }
 
     @Override
@@ -358,7 +351,7 @@ public class Camera1BasicFragment extends Fragment
             } else {
                 System.out.println("定位结果："+"定位失败，loc is null");
                 position = "未识别该位置";
-                iv_search_position.setEnabled(false);
+                iv_search_position.setEnabled(false);//定位失败时，不能查看周边
             }
             stv_time.setLeftString(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
             stv_position.setLeftString(position);

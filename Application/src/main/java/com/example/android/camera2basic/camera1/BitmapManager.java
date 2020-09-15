@@ -124,25 +124,25 @@ public class BitmapManager {
         //画时间
         drawPosition(mNewBitmap, mCanvas,
                 new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()),
-                R.drawable.ic_launcher,
+                R.drawable.line,
                 SystemUtil.dp2px(context,20),
                 mNewBitmap.getHeight()-SystemUtil.dp2px(context,isShuPing?120:90),
-                true);
+                0);
         //画位置
         drawPosition(mNewBitmap, mCanvas,
                 position,
-                R.drawable.ic_save,
+                R.drawable.location,
                 SystemUtil.dp2px(context,20),
                 mNewBitmap.getHeight()-SystemUtil.dp2px(context,isShuPing?90:60),
-                false);
+                1);
 
         //画项目名称
         drawPosition(mNewBitmap, mCanvas,
                 project,
-                R.drawable.ic_save,
+                R.drawable.dot,
                 SystemUtil.dp2px(context,20),
                 mNewBitmap.getHeight()-SystemUtil.dp2px(context,isShuPing?50:30),
-                false);
+                2);
 
 
         mCanvas.save();
@@ -150,15 +150,38 @@ public class BitmapManager {
         return mNewBitmap2;
     }
 
-    public  void drawPosition(Bitmap mNewBitmap, Canvas mCanvas, String mFormat, int drawable, int x, int y, boolean isTime) {
+    public  void drawPosition(Bitmap mNewBitmap, Canvas mCanvas, String mFormat, int drawable,
+                              int x, int y, int type) {
         if (TextUtils.isEmpty(mFormat)) return;
 
         Bitmap resource = BitmapFactory.decodeResource(context.getResources(), drawable);
         int width = resource.getWidth();
         int height = resource.getHeight();
         // 设置想要的大小
-        int newWidth = isTime?SystemUtil.dp2px(context,16):SystemUtil.dp2px(context,12);
-        int newHeight = isTime?SystemUtil.dp2px(context,16):SystemUtil.dp2px(context,12);
+        int newWidth = 0;
+        int newHeight = 0;
+        int disX = 0;
+        int disY = 0;
+        switch (type){
+            case 0:
+                newWidth = SystemUtil.dp2px(context,2);
+                newHeight = SystemUtil.dp2px(context,12);
+                disX = SystemUtil.dp2px(context,4);
+                disY = SystemUtil.dp2px(context,5);
+                break;
+            case 1:
+                newWidth = SystemUtil.dp2px(context,10);
+                newHeight = SystemUtil.dp2px(context,10);
+                disX = SystemUtil.dp2px(context,0);
+                disY = SystemUtil.dp2px(context,4);
+                break;
+            case 2:
+                newWidth = SystemUtil.dp2px(context,3);
+                newHeight = SystemUtil.dp2px(context,3);
+                disX = SystemUtil.dp2px(context,3.5f);
+                disY = SystemUtil.dp2px(context,5);
+                break;
+        }
         // 计算缩放比例
         float scaleWidth = ((float) newWidth) / width;
         float scaleHeight = ((float) newHeight) / height;
@@ -167,11 +190,12 @@ public class BitmapManager {
         matrix2.postScale(scaleWidth, scaleHeight);
         // 得到新的图片
         resource = Bitmap.createBitmap(resource, 0, 0, width, height, matrix2, true);
-        mCanvas.drawBitmap(resource, x, y+SystemUtil.dp2px(context,2), null);
+        mCanvas.drawBitmap(resource, x+disX, y+disY, null);
 
         TextPaint textPaint = new TextPaint();
         textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(isTime?SystemUtil.dp2px(context,16):SystemUtil.dp2px(context,12));
+        textPaint.setTextSize(type == 0 ?
+                SystemUtil.dp2px(context,16):SystemUtil.dp2px(context,12));
         StaticLayout staticLayout = new StaticLayout(mFormat, textPaint,
                 mNewBitmap.getWidth()-SystemUtil.dp2px(context,100),
                     Layout.Alignment.ALIGN_NORMAL, 1, 0, true);
