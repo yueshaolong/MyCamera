@@ -346,8 +346,8 @@ public class Camera1BasicFragment extends Fragment
                 sb.append("回调时间: " + SystemUtil.formatTime(System.currentTimeMillis()));
 
                 //解析定位结果，
-//                String result = sb.toString();
-//                System.out.println("定位结果："+result);
+                String result = sb.toString();
+                System.out.println("定位结果："+result);
             } else {
                 System.out.println("定位结果："+"定位失败，loc is null");
                 position = "未识别该位置";
