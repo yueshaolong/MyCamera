@@ -94,6 +94,7 @@ public class FileActivity extends AppCompatActivity {
 //                                return arrayList;
 //                            }
 //                        })
+                        .enableSingleChoice()
                         .forResult(FilePickerManager.REQUEST_CODE);
             }
         });
@@ -142,25 +143,26 @@ public class FileActivity extends AppCompatActivity {
                 }
                 break;
             case 0:
+                Uri uri = data.getData(); // 获取用户选择文件的URI
+                //通过ContentProvider查询文件路径
+                ContentResolver resolver = this.getContentResolver();
+                Cursor cursor = resolver.query(uri, null, null,
+                        null, null);
+                if (cursor == null) {
+                    // 未查询到，说明为普通文件，可直接通过URI获取文件路径
+                    path = uri.getPath();
+//                    return;
+                }
+                if (cursor.moveToFirst()) {
+                    // 多媒体文件，从数据库中获取文件的真实路径
+                    path = cursor.getString(cursor.getColumnIndex("_data"));
+                }
+                cursor.close();
+
+                path = getFilePathFromUri(this, uri);
+                tv.setText(path);
                 break;
         }
-//        Uri uri = data.getData(); // 获取用户选择文件的URI
-        // 通过ContentProvider查询文件路径
-//        ContentResolver resolver = this.getContentResolver();
-//        Cursor cursor = resolver.query(uri, null, null, null, null);
-//        if (cursor == null) {
-//            // 未查询到，说明为普通文件，可直接通过URI获取文件路径
-//            String path = uri.getPath();
-//            return;
-//        }
-//        if (cursor.moveToFirst()) {
-//            // 多媒体文件，从数据库中获取文件的真实路径
-//            String path = cursor.getString(cursor.getColumnIndex("_data"));
-//        }
-//        cursor.close();
-
-//        path = getFilePathFromUri(this, uri);
-//        tv.setText(path);
     }
 
     public static String byte2FitMemorySize(long byteNum) {
