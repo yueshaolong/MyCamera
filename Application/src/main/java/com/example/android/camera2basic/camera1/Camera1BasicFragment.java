@@ -103,7 +103,10 @@ public class Camera1BasicFragment extends Fragment
     private SuperTextView stv_project_name;
     private ImageView iv_search_position;
     private int screenHeight;
-
+    private int oldOrientation = 0;
+    private int llRvHeight;
+    private int photoMessageHeight;
+    private int photoMessageWidth;
     public static Camera1BasicFragment newInstance() {
         return new Camera1BasicFragment();
     }
@@ -171,6 +174,52 @@ public class Camera1BasicFragment extends Fragment
                     } else {
                         takePhotoOrientation = 90;
                     }
+
+                    // 只检测是否有四个角度的改变
+                    if (orientation < 60 && orientation > 30) { // 动画0度与接口360度相反,增加下限抵消0度影响
+                        orientation = 360;
+                    } else if (orientation > 70 && orientation < 110) { // 动画90度与接口270度相反
+                        orientation = 270;
+                    } else if (orientation > 160 && orientation < 200) { // 180度
+                        orientation = 180;
+                    } else if (orientation > 240 && orientation < 300) {
+                        orientation = 90;
+                    } else if (orientation > 320 && orientation < 340) {// 减少上限减少360度的影响
+                        orientation = 0;
+                    } else {
+                        return;
+                    }
+                    if (oldOrientation != orientation) {
+                        System.out.println("cameraPreview--h---->"+cameraPreview.getHeight()+"--w---->"+cameraPreview.getWidth());
+                        System.out.println("ll_photo_message--h---->"+photoMessageHeight+"--w---->"+photoMessageWidth);
+                        if (orientation == 270) {
+                            ObjectAnimator rotation = ObjectAnimator
+                                    .ofFloat(ll_photo_message, "Rotation", oldOrientation,
+                                            orientation).setDuration(0);
+                            ll_photo_message.setPivotX((photoMessageWidth-photoMessageHeight/2)/2-photoMessageHeight/2);
+                            ll_photo_message.setPivotY(-(photoMessageWidth-photoMessageHeight/2)/2+photoMessageHeight/2);
+                            rotation.start();
+                        }else if(orientation == 90){
+                            ObjectAnimator rotation = ObjectAnimator
+                                    .ofFloat(ll_photo_message, "Rotation", oldOrientation,
+                                            orientation).setDuration(0);
+//                            ll_photo_message.setPivotX(photoMessageWidth/2);
+                            ll_photo_message.setPivotY(-(cameraPreview.getWidth()- (photoMessageWidth-photoMessageHeight/2)));
+                            rotation.start();
+                        }else if(orientation == 180){
+                            ObjectAnimator rotation = ObjectAnimator
+                                    .ofFloat(ll_photo_message, "Rotation", oldOrientation,
+                                            orientation).setDuration(0);
+                            ll_photo_message.setPivotY(-(cameraPreview.getHeight()-photoMessageHeight*2)/2);
+                            rotation.start();
+                        }else {
+                            ObjectAnimator rotation = ObjectAnimator
+                                    .ofFloat(ll_photo_message, "Rotation", oldOrientation,
+                                            orientation).setDuration(0);
+                            rotation.start();
+                        }
+                        oldOrientation = orientation;
+                    }
                 }
             };
 
@@ -179,6 +228,27 @@ public class Camera1BasicFragment extends Fragment
 
     }
     public LoadService loadService;
+    @Override
+    public void onStart() {
+        super.onStart();
+        ll_rv.post(new Runnable() {
+            @Override
+            public void run() {
+                llRvHeight = ll_rv.getMeasuredHeight();
+                System.out.println("screenHeight---->"+screenHeight+"    llRvHeight---->"+llRvHeight);
+                ll_rv.setVisibility(View.GONE);
+            }
+        });
+        ll_photo_message.post(new Runnable() {
+            @Override
+            public void run() {
+                photoMessageHeight = ll_photo_message.getMeasuredHeight();
+                photoMessageWidth = ll_photo_message.getMeasuredWidth();
+                initOrientate();
+                System.out.println("photoMessageHeight---->"+photoMessageHeight+"    photoMessageWidth---->"+photoMessageWidth);
+            }
+        });
+    }
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);

@@ -13,6 +13,7 @@
         android:layout_height="match_parent" />
 
     <ImageView
+        android:visibility="gone"
         android:id="@+id/switch_flash"
         android:layout_marginTop="16dp"
         android:layout_width="28dp"
@@ -26,29 +27,53 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginBottom="120dp"
-        android:scaleType="fitXY"
+        android:scaleType="centerInside"
         android:visibility="gone"
-        android:src="@color/control_background"
         />
     <LinearLayout
         android:id="@+id/ll_take_photo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:visibility="visible"
+        android:layout_marginBottom="30dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="16dp"
+            android:layout_marginBottom="@dimen/dp_10"
+            android:text="照片"
+            android:textSize="12sp"
+            android:textColor="@color/yellow"/>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="58dp"
         android:layout_alignParentBottom="true"
         android:gravity="center"
         android:visibility="visible"
-        android:layout_marginBottom="36dp"
         android:orientation="horizontal">
-        <ImageView
+<!--        <ImageView-->
+<!--            android:id="@+id/iv_back"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_weight="1"-->
+<!--            android:layout_height="58dp"-->
+<!--            android:padding="16dp"-->
+<!--            android:onClick="close"-->
+<!--            android:scaleType="centerInside"-->
+<!--            android:layout_centerVertical="true"-->
+<!--            app:srcCompat="@drawable/icon_back" />-->
+        <TextView
             android:id="@+id/iv_back"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="58dp"
             android:padding="16dp"
-            android:onClick="close"
-            android:scaleType="centerInside"
-            android:layout_centerVertical="true"
-            android:src="@drawable/icon_back" />
+            android:gravity="center"
+            android:text="取消"
+            android:textColor="@color/white"
+            android:textSize="16sp"/>
         <ImageView
             android:id="@+id/take_photo"
             android:layout_width="58dp"
@@ -56,14 +81,15 @@
             android:layout_marginLeft="50dp"
             android:layout_marginRight="50dp"
             android:scaleType="fitXY"
-            android:src="@drawable/ic_camera"/>
+            app:srcCompat="@drawable/ic_camera"/>
         <ImageView
             android:id="@+id/switch_camera"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="58dp"
             android:scaleType="center"
-            android:src="@drawable/ic_switch_camera"/>
+            android:src="@drawable/flash_close"/>
+    </LinearLayout>
     </LinearLayout>
     <LinearLayout
         android:id="@+id/ll_save_delete"
@@ -76,8 +102,8 @@
         android:orientation="horizontal">
     <ImageView
         android:id="@+id/delete"
-        android:layout_width="58dp"
-        android:layout_height="58dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:padding="10dp"
         android:layout_gravity="start"
         android:layout_marginLeft="45dp"
@@ -90,8 +116,8 @@
             android:layout_height="0.1dp"/>
     <ImageView
         android:id="@+id/save"
-        android:layout_width="58dp"
-        android:layout_height="58dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_gravity="end"
         android:layout_marginRight="45dp"
         android:scaleType="fitXY"
@@ -117,7 +143,7 @@
                 android:id="@+id/stv_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:sLeftIconRes="@drawable/line"
+                app:sLeftIconRes="@drawable/dot"
                 app:sLeftIconHeight="12dp"
                 app:sLeftIconWidth="2dp"
                 app:sLeftIconMarginLeft="4dp"
@@ -125,6 +151,7 @@
                 app:sLeftViewMarginLeft="14dp"
                 app:sLeftTextString="2020.09.12 15:34"
                 app:sLeftTextSize="16sp"
+                app:sBackgroundDrawableRes="@color/transparent"
                 app:sLeftTextColor="@color/white"/>
             <com.allen.library.SuperTextView
                 android:id="@+id/stv_position"
@@ -132,13 +159,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="10dp"
-                app:sLeftIconRes="@drawable/location"
+                app:sLeftIconRes="@drawable/dot"
                 app:sLeftIconHeight="10dp"
                 app:sLeftIconWidth="10dp"
                 app:sLeftIconMarginLeft="0dp"
                 app:sDividerLineType="none"
                 app:sLeftTextString="位置：XXX独守空房你史蒂夫纳什空间分布刷卡付款的的看法纳斯达克妇女上岛咖啡你说的开发"
                 app:sLeftTextSize="12sp"
+                app:sBackgroundDrawableRes="@color/transparent"
                 app:sLeftTextColor="@color/white"/>
             <com.allen.library.SuperTextView
                 android:id="@+id/stv_project_name"
@@ -153,6 +181,7 @@
                 app:sLeftViewMarginLeft="13.5dp"
                 app:sLeftTextString="XXX项目放大功能帝国黑人共和如果换了四个的女生打款给给人给哦给你离开东京喇叭"
                 app:sLeftTextSize="12sp"
+                app:sBackgroundDrawableRes="@color/transparent"
                 app:sLeftTextColor="@color/white"/>
         </LinearLayout>
         <ImageView
@@ -161,11 +190,11 @@
             android:layout_width="@dimen/dp_40"
             android:layout_height="@dimen/dp_40"
             android:padding="@dimen/dp_10"
-            android:src="@drawable/search_location"/>
+            android:src="@drawable/line"/>
     </LinearLayout>
 
     <LinearLayout
-        android:visibility="gone"
+        android:visibility="visible"
         android:id="@+id/ll_rv"
         android:layout_alignParentBottom="true"
         android:padding="10dp"
