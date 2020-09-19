@@ -95,7 +95,7 @@ public class Camera1BasicFragment extends Fragment
     private BitmapManager bitmapManager;
     private String position;
     private String projectName = "士大夫那我非法八十端口饭卡手动阀你看的身份那是肯定减肥士大夫那我非法八十端口饭卡手动阀你看的身份那是肯定减肥";
-    private ImageView iv_back;
+    private TextView iv_back;
     private ImageView take_photo;
     private ImageView switch_camera;
     private ImageView delete;
@@ -103,6 +103,8 @@ public class Camera1BasicFragment extends Fragment
     private SuperTextView stv_project_name;
     private ImageView iv_search_position;
     private int screenHeight;
+    private int screenWidth;
+    private boolean locationSuccess;
     private int oldOrientation = 0;
     private int llRvHeight;
     private int photoMessageHeight;
@@ -190,34 +192,38 @@ public class Camera1BasicFragment extends Fragment
                         return;
                     }
                     if (oldOrientation != orientation) {
-                        System.out.println("cameraPreview--h---->"+cameraPreview.getHeight()+"--w---->"+cameraPreview.getWidth());
-                        System.out.println("ll_photo_message--h---->"+photoMessageHeight+"--w---->"+photoMessageWidth);
+                        ObjectAnimator rotation = ObjectAnimator
+                                .ofFloat(ll_photo_message, "Rotation", oldOrientation,
+                                        orientation).setDuration(0);
+                        int photoMessageHeight = ll_photo_message.getHeight();
+                        System.out.println("ll_photo_message--h---->"+photoMessageHeight+"--w---->"+screenWidth);
+                        System.out.println("orientation------>"+orientation);
                         if (orientation == 270) {
-                            ObjectAnimator rotation = ObjectAnimator
-                                    .ofFloat(ll_photo_message, "Rotation", oldOrientation,
-                                            orientation).setDuration(0);
-                            ll_photo_message.setPivotX((photoMessageWidth-photoMessageHeight/2)/2-photoMessageHeight/2);
-                            ll_photo_message.setPivotY(-(photoMessageWidth-photoMessageHeight/2)/2+photoMessageHeight/2);
-                            rotation.start();
+                            ll_photo_message.setPivotX(screenWidth/2);
+                            ll_photo_message.setPivotY(-(screenWidth/2-photoMessageHeight));
                         }else if(orientation == 90){
-                            ObjectAnimator rotation = ObjectAnimator
-                                    .ofFloat(ll_photo_message, "Rotation", oldOrientation,
-                                            orientation).setDuration(0);
-//                            ll_photo_message.setPivotX(photoMessageWidth/2);
-                            ll_photo_message.setPivotY(-(cameraPreview.getWidth()- (photoMessageWidth-photoMessageHeight/2)));
-                            rotation.start();
+                            ll_photo_message.setPivotX(screenWidth/2);
+                            ll_photo_message.setPivotY(-(screenWidth/2-photoMessageHeight));
                         }else if(orientation == 180){
-                            ObjectAnimator rotation = ObjectAnimator
-                                    .ofFloat(ll_photo_message, "Rotation", oldOrientation,
-                                            orientation).setDuration(0);
-                            ll_photo_message.setPivotY(-(cameraPreview.getHeight()-photoMessageHeight*2)/2);
-                            rotation.start();
+                            ll_photo_message.setPivotX(screenWidth/2);
+                            ll_photo_message.setPivotY(-(screenWidth/2-photoMessageHeight));
                         }else {
-                            ObjectAnimator rotation = ObjectAnimator
-                                    .ofFloat(ll_photo_message, "Rotation", oldOrientation,
-                                            orientation).setDuration(0);
-                            rotation.start();
+                            ll_photo_message.setPivotX(0);
+                            ll_photo_message.setPivotY(0);
                         }
+                        rotation.start();
+                        if (orientation == 270 || orientation == 0){
+                            ObjectAnimator translationY = ObjectAnimator.ofFloat(ll_photo_message, "translationY",
+                                    -(cameraPreview.getHeight() - screenWidth), 0);
+                            translationY.setDuration(0);
+                            translationY.start();
+                        } else if(orientation == 90 || orientation == 180){
+                            ObjectAnimator translationY = ObjectAnimator.ofFloat(ll_photo_message, "translationY",
+                                    0,-(cameraPreview.getHeight() - screenWidth));
+                            translationY.setDuration(0);
+                            translationY.start();
+                        }
+                        ll_photo_message.clearAnimation();
                         oldOrientation = orientation;
                     }
                 }
@@ -229,31 +235,12 @@ public class Camera1BasicFragment extends Fragment
     }
     public LoadService loadService;
     @Override
-    public void onStart() {
-        super.onStart();
-        ll_rv.post(new Runnable() {
-            @Override
-            public void run() {
-                llRvHeight = ll_rv.getMeasuredHeight();
-                System.out.println("screenHeight---->"+screenHeight+"    llRvHeight---->"+llRvHeight);
-                ll_rv.setVisibility(View.GONE);
-            }
-        });
-        ll_photo_message.post(new Runnable() {
-            @Override
-            public void run() {
-                photoMessageHeight = ll_photo_message.getMeasuredHeight();
-                photoMessageWidth = ll_photo_message.getMeasuredWidth();
-                initOrientate();
-                System.out.println("photoMessageHeight---->"+photoMessageHeight+"    photoMessageWidth---->"+photoMessageWidth);
-            }
-        });
-    }
-    @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         getScreenBrightness();
         screenHeight = SystemUtil.getScreenHeight(getActivity());
+        screenWidth = SystemUtil.getScreenWidth(getActivity());
+        initOrientate();
         stv_project_name.setLeftString(projectName);
 
         mData = new ArrayList<>();
@@ -277,7 +264,7 @@ public class Camera1BasicFragment extends Fragment
                     public void onClick(View v) {
                         position = item.getTitle();
                         stv_position.setLeftString(position);
-                        ll_rv.setVisibility(View.GONE);
+                        ObjectAnimator.ofFloat(ll_rv,"translationY",0,screenHeight).start();
                     }
                 });
             }
@@ -396,7 +383,7 @@ public class Camera1BasicFragment extends Fragment
                     //设置周边搜索的中心点以及半径
                     tv_position.setText(location.getProvince()+location.getCity()+location.getDistrict());
                     locationManager.setBound(new LatLonPoint(location.getLatitude(),location.getLongitude()), 500);
-                    iv_search_position.setEnabled(true);
+                    locationSuccess = true;
                 } else {
                     //定位失败
                     sb.append("定位失败" + "\n");
@@ -405,7 +392,7 @@ public class Camera1BasicFragment extends Fragment
                     sb.append("错误描述:" + location.getLocationDetail() + "\n");
 
                     position = "未识别该位置";
-                    iv_search_position.setEnabled(false);
+                    locationSuccess = false;
                 }
                 sb.append("***定位质量报告***").append("\n");
                 sb.append("* WIFI开关：").append(location.getLocationQualityReport().isWifiAble() ? "开启":"关闭").append("\n");
@@ -421,7 +408,7 @@ public class Camera1BasicFragment extends Fragment
             } else {
                 System.out.println("定位结果："+"定位失败，loc is null");
                 position = "未识别该位置";
-                iv_search_position.setEnabled(false);//定位失败时，不能查看周边
+                locationSuccess = false;//定位失败时，不能查看周边
             }
             stv_time.setLeftString(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
             stv_position.setLeftString(position);
@@ -461,7 +448,7 @@ public class Camera1BasicFragment extends Fragment
             parameters.setFlashMode(isFlashing ? Camera.Parameters.FLASH_MODE_TORCH : Camera.Parameters.FLASH_MODE_OFF);
             mCamera.setParameters(parameters);
         } catch (Exception e) {
-            Toast.makeText(getActivity(), "该设备不支持闪光灯", Toast.LENGTH_SHORT);
+            Toast.makeText(getActivity(), "该设备不支持闪光灯", Toast.LENGTH_SHORT).show();
         }
     }
     private void cancleSavePhoto() {
@@ -496,7 +483,7 @@ public class Camera1BasicFragment extends Fragment
         switch (view.getId()) {
             case R.id.camera_preview_layout:
                 if (ll_rv.getVisibility() == View.VISIBLE)
-                    ll_rv.setVisibility(View.GONE);
+                    ObjectAnimator.ofFloat(ll_rv,"translationY",0,screenHeight).start();
                 break;
             case R.id.take_photo:
                 takePhoto();
@@ -523,12 +510,17 @@ public class Camera1BasicFragment extends Fragment
                 getActivity().finish();
                 break;
             case R.id.tv_position:
-                ll_rv.setVisibility(View.GONE);
+                ObjectAnimator.ofFloat(ll_rv,"translationY",0,screenHeight).start();
                 break;
             case R.id.iv_search_position:
-                ll_rv.setVisibility(View.VISIBLE);
-                loadService.showCallback(LoadingCallback.class);
-                locationManager.query(currentPage);
+                if (locationSuccess) {
+                    ll_rv.setVisibility(View.VISIBLE);
+                    loadService.showCallback(LoadingCallback.class);
+                    locationManager.query(currentPage);
+                    ObjectAnimator.ofFloat(ll_rv,"translationY",screenHeight,0).start();
+                } else {
+                    Toast.makeText(getActivity(),"定位失败时，不能查看周边",Toast.LENGTH_SHORT).show();
+                }
                 break;
             default:
         }
@@ -595,60 +587,59 @@ public class Camera1BasicFragment extends Fragment
                 setOverCameraView(event);
                 break;
             default:
-                switch (event.getAction() & MotionEvent.ACTION_MASK) {
-                    //手指按下屏幕
-                    case MotionEvent.ACTION_DOWN:
-                        mode = MODE_INIT;
-                        break;
-                    //当屏幕上已经有触摸点按下的状态的时候，再有新的触摸点被按下时会触发
-                    case MotionEvent.ACTION_POINTER_DOWN:
-                        mode = MODE_ZOOM;
-                        //计算两个手指的距离 两点的距离
-                        startDis = SystemUtil.twoPointDistance(event);
-                        break;
-                    //移动的时候回调
-                    case MotionEvent.ACTION_MOVE:
-                        isMove = true;
-                        //这里主要判断有两个触摸点的时候才触发
-                        if (mode == MODE_ZOOM) {
-                            //只有两个点同时触屏才执行
-                            if (event.getPointerCount() < 2) {
-                                return true;
-                            }
-                            //获取结束的距离
-                            float endDis = SystemUtil.twoPointDistance(event);
-                            //每变化10f zoom变1
-                            int scale = (int) ((endDis - startDis) / 10f);
-                            if (scale >= 1 || scale <= -1) {
-                                int zoom = cameraPreview.getZoom() + scale;
-                                //判断zoom是否超出变焦距离
-                                if (zoom > cameraPreview.getMaxZoom()) {
-                                    zoom = cameraPreview.getMaxZoom();
-                                }
-                                //如果系数小于0
-                                if (zoom < 0) {
-                                    zoom = 0;
-                                }
-                                //设置焦距
-                                cameraPreview.setZoom(zoom);
-                                //将最后一次的距离设为当前距离
-                                startDis = endDis;
-                            }
-                        }
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        //判断是否点击屏幕 如果是自动聚焦
-                        if (isMove == false) {
-                            //自动聚焦
-                            cameraPreview.autoFoucus();
-                        }
-                        isMove = false;
-                        break;
-                }
+//                switch (event.getAction() & MotionEvent.ACTION_MASK) {
+//                    //手指按下屏幕
+//                    case MotionEvent.ACTION_DOWN:
+//                        mode = MODE_INIT;
+//                        break;
+//                    //当屏幕上已经有触摸点按下的状态的时候，再有新的触摸点被按下时会触发
+//                    case MotionEvent.ACTION_POINTER_DOWN:
+//                        mode = MODE_ZOOM;
+//                        //计算两个手指的距离 两点的距离
+//                        startDis = SystemUtil.twoPointDistance(event);
+//                        break;
+//                    //移动的时候回调
+//                    case MotionEvent.ACTION_MOVE:
+//                        isMove = true;
+//                        //这里主要判断有两个触摸点的时候才触发
+//                        if (mode == MODE_ZOOM) {
+//                            //只有两个点同时触屏才执行
+//                            if (event.getPointerCount() < 2) {
+//                                return true;
+//                            }
+//                            //获取结束的距离
+//                            float endDis = SystemUtil.twoPointDistance(event);
+//                            //每变化10f zoom变1
+//                            int scale = (int) ((endDis - startDis) / 10f);
+//                            if (scale >= 1 || scale <= -1) {
+//                                int zoom = cameraPreview.getZoom() + scale;
+//                                //判断zoom是否超出变焦距离
+//                                if (zoom > cameraPreview.getMaxZoom()) {
+//                                    zoom = cameraPreview.getMaxZoom();
+//                                }
+//                                //如果系数小于0
+//                                if (zoom < 0) {
+//                                    zoom = 0;
+//                                }
+//                                //设置焦距
+//                                cameraPreview.setZoom(zoom);
+//                                //将最后一次的距离设为当前距离
+//                                startDis = endDis;
+//                            }
+//                        }
+//                        break;
+//                    case MotionEvent.ACTION_UP:
+//                        //判断是否点击屏幕 如果是自动聚焦
+//                        if (isMove == false) {
+//                            //自动聚焦
+//                            cameraPreview.autoFoucus();
+//                        }
+//                        isMove = false;
+//                        break;
+//                }
         }
         return false;
     }
-
     private void setOverCameraView(MotionEvent event) {
         if (!isFoucing) {
             float x = event.getX();

@@ -13,7 +13,7 @@
         android:layout_height="match_parent" />
 
     <ImageView
-        android:visibility="gone"
+        android:visibility="visible"
         android:id="@+id/switch_flash"
         android:layout_marginTop="16dp"
         android:layout_width="28dp"
@@ -88,7 +88,7 @@
             android:layout_weight="1"
             android:layout_height="58dp"
             android:scaleType="center"
-            android:src="@drawable/flash_close"/>
+            android:src="@drawable/ic_switch_camera"/>
     </LinearLayout>
     </LinearLayout>
     <LinearLayout
@@ -159,7 +159,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="10dp"
-                app:sLeftIconRes="@drawable/dot"
+                app:sLeftIconRes="@drawable/location"
                 app:sLeftIconHeight="10dp"
                 app:sLeftIconWidth="10dp"
                 app:sLeftIconMarginLeft="0dp"
@@ -190,11 +190,11 @@
             android:layout_width="@dimen/dp_40"
             android:layout_height="@dimen/dp_40"
             android:padding="@dimen/dp_10"
-            android:src="@drawable/line"/>
+            android:src="@drawable/search_location"/>
     </LinearLayout>
 
     <LinearLayout
-        android:visibility="visible"
+        android:visibility="gone"
         android:id="@+id/ll_rv"
         android:layout_alignParentBottom="true"
         android:padding="10dp"
