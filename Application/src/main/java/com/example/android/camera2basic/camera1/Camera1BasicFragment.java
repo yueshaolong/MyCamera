@@ -94,7 +94,7 @@ public class Camera1BasicFragment extends Fragment
     private LocationManager locationManager;
     private BitmapManager bitmapManager;
     private String position;
-    private String projectName = "士大夫那我非法八十端口饭卡手动阀你看的身份那是肯定减肥士大夫那我非法八十端口饭卡手动阀你看的身份那是肯定减肥";
+    private String projectName = "测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试";
     private TextView iv_back;
     private ImageView take_photo;
     private ImageView switch_camera;
@@ -264,7 +264,7 @@ public class Camera1BasicFragment extends Fragment
                     public void onClick(View v) {
                         position = item.getTitle();
                         stv_position.setLeftString(position);
-                        ObjectAnimator.ofFloat(ll_rv,"translationY",0,screenHeight).start();
+                        HideRV();
                     }
                 });
             }
@@ -456,7 +456,7 @@ public class Camera1BasicFragment extends Fragment
         ll_take_photo.setVisibility(View.VISIBLE);
         ll_photo_message.setVisibility(View.VISIBLE);
         mPreviewLayout.setVisibility(View.VISIBLE);
-        switch_flash.setVisibility(View.VISIBLE);
+        switch_flash.setVisibility(View.GONE);
         if (mFile.exists()) mFile.delete();
         preview.setVisibility(View.GONE);
         //开始预览
@@ -482,8 +482,7 @@ public class Camera1BasicFragment extends Fragment
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.camera_preview_layout:
-                if (ll_rv.getVisibility() == View.VISIBLE)
-                    ObjectAnimator.ofFloat(ll_rv,"translationY",0,screenHeight).start();
+                HideRV();
                 break;
             case R.id.take_photo:
                 takePhoto();
@@ -510,7 +509,7 @@ public class Camera1BasicFragment extends Fragment
                 getActivity().finish();
                 break;
             case R.id.tv_position:
-                ObjectAnimator.ofFloat(ll_rv,"translationY",0,screenHeight).start();
+                HideRV();
                 break;
             case R.id.iv_search_position:
                 if (locationSuccess) {
@@ -523,6 +522,33 @@ public class Camera1BasicFragment extends Fragment
                 }
                 break;
             default:
+        }
+    }
+    private void HideRV() {
+        if (ll_rv.getVisibility() == View.VISIBLE) {
+            ObjectAnimator animator = ObjectAnimator.ofFloat(ll_rv, "translationY", 0, screenHeight);
+            animator.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    ll_rv.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            });
+            animator.start();
         }
     }
     private int mCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;

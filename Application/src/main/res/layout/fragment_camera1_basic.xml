@@ -13,7 +13,7 @@
         android:layout_height="match_parent" />
 
     <ImageView
-        android:visibility="visible"
+        android:visibility="gone"
         android:id="@+id/switch_flash"
         android:layout_marginTop="16dp"
         android:layout_width="28dp"
