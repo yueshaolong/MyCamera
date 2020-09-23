@@ -115,6 +115,7 @@ public class LocationManager {
         return str;
     }
     public void startLocation(){
+        System.out.println("========开始定位");
         // 设置定位参数
         locationClient.setLocationOption(locationOption);
         // 启动定位

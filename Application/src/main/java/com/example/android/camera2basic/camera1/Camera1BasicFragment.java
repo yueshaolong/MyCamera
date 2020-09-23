@@ -350,6 +350,7 @@ public class Camera1BasicFragment extends Fragment
     AMapLocationListener locationListener = new AMapLocationListener() {
         @Override
         public void onLocationChanged(AMapLocation location) {
+            System.out.println("==========定位回调");
             if (null != location) {
                 StringBuffer sb = new StringBuffer();
                 //errCode等于0代表定位成功，其他的为定位失败，具体的可以参照官网定位错误码说明
