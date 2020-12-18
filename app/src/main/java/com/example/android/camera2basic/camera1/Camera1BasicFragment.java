@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.net.Uri;
@@ -486,7 +487,24 @@ public class Camera1BasicFragment extends Fragment
                 HideRV();
                 break;
             case R.id.take_photo:
-                takePhoto();
+//                takePhoto();
+//                View cv = getActivity().getWindow().getDecorView();
+//                cv.setDrawingCacheEnabled(true);
+//                cv.buildDrawingCache();
+//                Bitmap bmp = cv.getDrawingCache();
+//                if (bmp == null) {
+//                    return;
+//                }
+//                bmp.setHasAlpha(false);
+//                bmp.prepareToDraw();
+                Bitmap screenshot;
+                screenshot = Bitmap.createBitmap(cameraPreview.getWidth(), cameraPreview.getHeight(), Bitmap.Config.RGB_565);
+                Canvas c = new Canvas(screenshot);
+                c.translate(-cameraPreview.getScrollX(), -cameraPreview.getScrollY());
+                cameraPreview.draw(c);
+                preview.setVisibility(View.VISIBLE);
+                preview.setImageBitmap(screenshot);
+
                 break;
             case R.id.switch_flash:
                 switchFlash();
