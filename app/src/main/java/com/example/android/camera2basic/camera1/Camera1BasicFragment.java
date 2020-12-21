@@ -1,36 +1,31 @@
 package com.example.android.camera2basic.camera1;
 
 import android.animation.Animator;
-import android.animation.Animator.AnimatorListener;
 import android.animation.ObjectAnimator;
-import android.content.Context;
-import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.hardware.Camera;
-import android.hardware.Camera.Parameters;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.OrientationEventListener;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.allen.library.SuperTextView;
 import com.amap.api.location.AMapLocation;
@@ -50,20 +45,11 @@ import com.kingja.loadsir.core.LoadService;
 import com.kingja.loadsir.core.LoadSir;
 import com.scwang.smartrefresh.layout.SmartRefreshLayout;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import androidx.annotation.Nullable;
-import androidx.core.content.FileProvider;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 public class Camera1BasicFragment extends Fragment
         implements View.OnClickListener, OnTouchListener{
@@ -487,7 +473,7 @@ public class Camera1BasicFragment extends Fragment
                 HideRV();
                 break;
             case R.id.take_photo:
-//                takePhoto();
+                takePhoto();
 //                View cv = getActivity().getWindow().getDecorView();
 //                cv.setDrawingCacheEnabled(true);
 //                cv.buildDrawingCache();
@@ -497,13 +483,13 @@ public class Camera1BasicFragment extends Fragment
 //                }
 //                bmp.setHasAlpha(false);
 //                bmp.prepareToDraw();
-                Bitmap screenshot;
-                screenshot = Bitmap.createBitmap(cameraPreview.getWidth(), cameraPreview.getHeight(), Bitmap.Config.RGB_565);
-                Canvas c = new Canvas(screenshot);
-                c.translate(-cameraPreview.getScrollX(), -cameraPreview.getScrollY());
-                cameraPreview.draw(c);
-                preview.setVisibility(View.VISIBLE);
-                preview.setImageBitmap(screenshot);
+//                Bitmap screenshot;
+//                screenshot = Bitmap.createBitmap(cameraPreview.getWidth(), cameraPreview.getHeight(), Bitmap.Config.RGB_565);
+//                Canvas c = new Canvas(screenshot);
+//                c.translate(-cameraPreview.getScrollX(), -cameraPreview.getScrollY());
+//                cameraPreview.draw(c);
+//                preview.setVisibility(View.VISIBLE);
+//                preview.setImageBitmap(screenshot);
 
                 break;
             case R.id.switch_flash:

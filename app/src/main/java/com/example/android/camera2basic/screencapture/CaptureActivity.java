@@ -1,71 +1,63 @@
-package com.example.android.camera2basic.jieping;
+package com.example.android.camera2basic.screencapture;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.ImageFormat;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.RectF;
+import android.graphics.Point;
 import android.hardware.Camera;
-import android.hardware.Camera.Parameters;
-import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
-import android.media.Image;
-import android.media.Image.Plane;
-import android.media.ImageReader;
-import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.IBinder;
 import android.util.Log;
-import android.util.TypedValue;
+import android.view.Display;
+import android.view.KeyCharacterMap;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
+import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.bumptech.glide.Glide;
 import com.example.android.camera2basic.R;
+import com.example.android.camera2basic.camera1.CameraPreview;
 import com.example.android.camera2basic.camera1.OverCameraView;
 import com.example.android.camera2basic.camera1.SystemUtil;
 import com.example.android.camera2basic.camera2.SingleMediaScanner;
+import com.example.android.camera2basic.screencapture.FloatWindowsService.Finish;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
-
-public class JiePingActivity extends AppCompatActivity implements OnClickListener, OnTouchListener {
-    private static final String TAG = "Camera1BasicFragment";
-    private static final int REQUEST_CAMERA_PERMISSION = 1;
-    private static final String FRAGMENT_DIALOG = "dialog";
+public class CaptureActivity extends AppCompatActivity
+        implements OnClickListener, OnTouchListener {
+    private static final String TAG = "CaptureActivity";
     private static final int REQUEST_MEDIA_PROJECTION = 0;
     private ImageView preview;
     private LinearLayout ll_take_photo;
+    private LinearLayout ll_photo_message;
     private LinearLayout ll_save_delete;
     private ImageView switch_flash;
     private File mFile;
@@ -84,10 +76,6 @@ public class JiePingActivity extends AppCompatActivity implements OnClickListene
      */
     private boolean isFlashing;
     /**
-     * 图片流暂存
-     */
-    private byte[] imageData;
-    /**
      * 拍照标记
      */
     private boolean isTakePhoto;
@@ -98,25 +86,23 @@ public class JiePingActivity extends AppCompatActivity implements OnClickListene
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
     private Bitmap newBitmap;
-    private Parameters mParameters;
     private CameraPreview cameraPreview;
     private RelativeLayout rl;
-    private MediaProjectionManager mMediaProjectionManager;
+    private FloatWindowsService.MyBinder myBinder;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.fragment_jieping);
+        setContentView(R.layout.fragment_camera3_basic);
         getScreenBrightness();
-        mMediaProjectionManager = (MediaProjectionManager)
-                getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         rl = findViewById(R.id.rl);
         mPreviewLayout = findViewById(R.id.camera_preview_layout);
         preview = findViewById(R.id.preview);
         ll_take_photo = findViewById(R.id.ll_take_photo);
+        ll_photo_message = findViewById(R.id.ll_photo_message);
         ll_save_delete = findViewById(R.id.ll_save_delete);
         switch_flash = findViewById(R.id.switch_flash);
-        ImageView iv_back = findViewById(R.id.iv_back);
+        TextView iv_back = findViewById(R.id.iv_back);
         ImageView take_photo = findViewById(R.id.take_photo);
         ImageView switch_camera = findViewById(R.id.switch_camera);
         ImageView delete = findViewById(R.id.delete);
@@ -129,6 +115,20 @@ public class JiePingActivity extends AppCompatActivity implements OnClickListene
         findViewById(R.id.save).setOnClickListener(this);
         findViewById(R.id.preview).setOnTouchListener(this);
         initOrientate();
+        requestCapturePermission();
+        registerReceiver();
+    }
+    public void requestCapturePermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            //5.0 之后才允许使用屏幕截图
+            return;
+        }
+
+        MediaProjectionManager mediaProjectionManager = (MediaProjectionManager)
+                getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        startActivityForResult(
+                mediaProjectionManager.createScreenCaptureIntent(),
+                REQUEST_MEDIA_PROJECTION);
     }
     //增加传感器
     private OrientationEventListener mOrientationEventListener;
@@ -174,7 +174,7 @@ public class JiePingActivity extends AppCompatActivity implements OnClickListene
         lp.screenBrightness = Float.valueOf(200) * (1f / 255f);
         this.getWindow().setAttributes(lp);
     }
-    private void createFile() {
+    private String createFile() {
         String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
                 .getAbsoluteFile() + File.separator + "Camera2Basic";
         File mIVMSFolder = new File(path);
@@ -183,6 +183,7 @@ public class JiePingActivity extends AppCompatActivity implements OnClickListene
         }
         fileName = System.currentTimeMillis() + ".jpg";
         mFile = new File(mIVMSFolder.getAbsolutePath(), fileName);
+        return mFile.getAbsolutePath();
     }
     @Override
     public void onResume() {
@@ -204,86 +205,84 @@ public class JiePingActivity extends AppCompatActivity implements OnClickListene
         isTakePhoto = true;
         ll_take_photo.setVisibility(View.GONE);
         ll_save_delete.setVisibility(View.VISIBLE);
+        Toast.makeText(this,"拍照",Toast.LENGTH_SHORT).show();
+        //TODO 执行截屏
+        myBinder.start();
     }
     //截屏成功后再onactivityResult回调,截取屏幕显示
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_MEDIA_PROJECTION) {
-            if (resultCode != Activity.RESULT_OK) {
-                Toast.makeText(this, "用户取消了", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            final ImageReader mImageReader = ImageReader.newInstance(
-                    mPreviewLayout.getWidth(),
-                    mPreviewLayout.getHeight(), ImageFormat.JPEG, 2);
-            MediaProjection mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data);
-            VirtualDisplay mVirtualDisplay = mMediaProjection.createVirtualDisplay("ScreenCapture",
-                    mPreviewLayout.getWidth(),
-                    mPreviewLayout.getHeight(),
-                    getResources().getDisplayMetrics().densityDpi,
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                    mImageReader.getSurface(), null, null);
-
-            String mImageName = System.currentTimeMillis() + ".png";
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    Image image = null;
-                    if (VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
-                        image = mImageReader.acquireLatestImage();
-                    }
-                    if (image == null) {
-                        return;
-                    }
-                    if (VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
-                        int width = image.getWidth();
-                        int height = image.getHeight();
-                        final Plane[] planes = image.getPlanes();
-                        final ByteBuffer buffer = planes[0].getBuffer();
-                        int pixelStride = planes[0].getPixelStride();
-                        int rowStride = planes[0].getRowStride();
-                        int rowPadding = rowStride - pixelStride * width;
-                        Bitmap mBitmap;
-                        mBitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Config.ARGB_8888);
-                        mBitmap.copyPixelsFromBuffer(buffer);
-                        mBitmap = Bitmap.createBitmap(mBitmap, 0, 0, width, height);
-                        image.close();
-
-                        if (mBitmap != null) {
-                            //拿到mitmap
-                            final Bitmap finalMBitmap = mBitmap;
-                            preview.setImageBitmap(finalMBitmap);
+        switch (requestCode) {
+            case REQUEST_MEDIA_PROJECTION:
+                if (resultCode == RESULT_OK && data != null) {
+                    Intent intent = new Intent(getApplicationContext(), FloatWindowsService.class);
+                    intent.putExtra("Intent", data);
+                    intent.putExtra("barHeight",isNavigationBarShow(this)? getNavigationBarHeight(this):0);
+                    intent.putExtra("imagePath",createFile());
+                    bindService(intent, new ServiceConnection() {
+                        @Override
+                        public void onServiceConnected(ComponentName name, IBinder service) {
+                            Log.d(TAG, "onServiceConnected is invoke");
+                            myBinder = (FloatWindowsService.MyBinder) service;
+                            myBinder.getService().setFinish(new Finish() {
+                                @Override
+                                public void setImage(Bitmap bitmap) {
+                                    newBitmap = bitmap;
+                                    ll_take_photo.setVisibility(View.GONE);
+                                    ll_photo_message.setVisibility(View.GONE);
+                                    ll_save_delete.setVisibility(View.VISIBLE);
+                                    mPreviewLayout.setVisibility(View.GONE);
+                                    switch_flash.setVisibility(View.GONE);
+                                    preview.setVisibility(View.VISIBLE);
+                                    preview.setImageBitmap(bitmap);
+                                }
+                            });
                         }
-                    }
 
+                        @Override
+                        public void onServiceDisconnected(ComponentName name) {
+
+                        }
+                    },BIND_AUTO_CREATE);
                 }
-            }, 300);
+                break;
         }
     }
-    private void getPhoto() {
-        createFile();
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(mFile);
-            fos.write(imageData);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                    // 获得图片
-                    Bitmap mBitmap = BitmapFactory.decodeFile(mFile.getPath());
-                    //添加时间水印
-                    newBitmap = AddTimeWatermark(mBitmap);
-//                    Glide.with(this).load(newBitmap).into(preview);
-                    setPreview(newBitmap);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+    //NavigationBar状态是否是显示
+    public boolean isNavigationBarShow(Activity mActivity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            Display display = mActivity.getWindowManager().getDefaultDisplay();
+            Point size = new Point();
+            Point realSize = new Point();
+            display.getSize(size);
+            display.getRealSize(realSize);
+            return realSize.y != size.y;
+        } else {
+            boolean menu = ViewConfiguration.get(mActivity).hasPermanentMenuKey();
+            boolean back = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK);
+            if (menu || back) {
+                return false;
+            } else {
+                return true;
             }
         }
+    }
+    //获取NavigationBar高度
+    public static int getNavigationBarHeight(Context context) {
+        return getSizeByReflection(context, "navigation_bar_height");
+    }
+    public static int getSizeByReflection(Context context, String field) {
+        int size = -1;
+        try {
+            Class<?> clazz = Class.forName("com.android.internal.R$dimen");
+            Object object = clazz.newInstance();
+            int height = Integer.parseInt(clazz.getField(field).get(object).toString());
+            size = context.getResources().getDimensionPixelSize(height);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return size;
     }
     private void switchFlash() {
         isFlashing = !isFlashing;
@@ -299,129 +298,25 @@ public class JiePingActivity extends AppCompatActivity implements OnClickListene
     private void cancleSavePhoto() {
         ll_take_photo.setVisibility(View.VISIBLE);
         ll_save_delete.setVisibility(View.GONE);
+        ll_photo_message.setVisibility(View.VISIBLE);
         mPreviewLayout.setVisibility(View.VISIBLE);
         switch_flash.setVisibility(View.VISIBLE);
-        if (mFile.exists()) mFile.delete();
+        if (mFile != null && mFile.exists()) mFile.delete();
         preview.setVisibility(View.GONE);
         //开始预览
         mCamera.startPreview();
-        imageData = null;
         isTakePhoto = false;
-    }
-    private void setPreview(Bitmap bitmap) {
-        this.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ll_take_photo.setVisibility(View.GONE);
-                ll_save_delete.setVisibility(View.VISIBLE);
-                mPreviewLayout.setVisibility(View.GONE);
-                switch_flash.setVisibility(View.GONE);
-                preview.setVisibility(View.VISIBLE);
-                preview.setImageBitmap(bitmap);
-//                Glide.with(this).load(bitmap).into(preview);
-            }
-        });
-    }
-    public Uri getUriFromFile(Context context, File file){
-        if (Build.VERSION.SDK_INT >= 24) {
-            return FileProvider.getUriForFile(context,this.getPackageName()+".provider", file);
-        } else {
-            return Uri.fromFile(file);
-        }
     }
     public void saveBitmapFile(Bitmap bitmap){
         if (null == bitmap) return;
         try {
             BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(mFile));
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, bos);
             bos.flush();
             bos.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-    private Bitmap AddTimeWatermark(Bitmap mBitmap) {
-        Matrix matrix = new Matrix();
-        matrix.postRotate(Float.valueOf(takePhotoOrientation));
-        if(mCameraId == 1){
-            if(takePhotoOrientation == 90){
-                matrix.postRotate(180f);
-            }
-        }
-        //获取原始图片与水印图片的宽与高
-        Bitmap mNewBitmap = Bitmap.createBitmap(mBitmap, 0, 0,
-                mBitmap.getWidth(), mBitmap.getHeight(), matrix, true);
-        //新增 如果是前置 需要镜面翻转处理
-        if(mCameraId == 1){
-            Matrix matrix1 = new Matrix();
-            matrix1.postScale(-1f,1f);
-            mNewBitmap = Bitmap.createBitmap(mNewBitmap, 0, 0,
-                    mNewBitmap.getWidth(), mNewBitmap.getHeight(), matrix1, true);
-        }
-
-        Bitmap mNewBitmap2 = Bitmap.createBitmap(mNewBitmap.getWidth(), mNewBitmap.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas mCanvas = new Canvas(mNewBitmap2);
-        //向位图中开始画入MBitmap原始图片
-        mCanvas.drawBitmap(mNewBitmap,0,0,null);
-        //添加文字
-        Paint mPaint = new Paint();
-        mPaint.setColor(Color.WHITE);
-        mPaint.setTextSize(dp2px(this,40));
-
-        //水印的位置坐标
-//        mPaint.setTextAlign(Paint.Align.LEFT);
-        //根据路径得到Typeface
-//        Typeface typeface=Typeface.createFromAsset(this.getAssets(), "fonts/xs.ttf");
-//        mPaint.setTypeface(typeface);
-//        mCanvas.rotate(-45, (mNewBitmap2.getWidth() * 1) / 2, (mNewBitmap2.getHeight() * 1) / 2);
-//        mCanvas.drawText(mFormat, (mNewBitmap.getWidth() * 1) / 2, (mNewBitmap.getHeight() * 1) / 2, mPaint);
-        String mFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss EEEE").format(new Date());
-        mCanvas.drawText(mFormat, dp2px(this,20),
-                mNewBitmap.getHeight()-dp2px(this,100), mPaint);
-        //矩形背景
-        Paint bgRect=new Paint();
-        bgRect.setStyle(Paint.Style.FILL);
-        bgRect.setColor(Color.YELLOW);
-        RectF rectF=new RectF(200, 200, 800, 600);
-        mCanvas.drawRect(rectF, bgRect);
-
-        mFormat = "位置 "+" 纬度:"+123+"  经度:"+456;
-        mPaint.setColor(Color.RED);
-        mPaint.setTextSize(dp2px(this,30));
-        mCanvas.drawText(mFormat, dp2px(this,60),
-                mNewBitmap.getHeight()-dp2px(this,50), mPaint);
-
-        Bitmap resource = BitmapFactory.decodeResource(this.getResources(), R.drawable.ic_save);
-        int width = resource.getWidth();
-        int height = resource.getHeight();
-        // 设置想要的大小
-        int newWidth = dp2px(this,30);
-        int newHeight = dp2px(this,30);
-        // 计算缩放比例
-        float scaleWidth = ((float) newWidth) / width;
-        float scaleHeight = ((float) newHeight) / height;
-        // 取得想要缩放的matrix参数
-        Matrix matrix2 = new Matrix();
-        matrix2.postScale(scaleWidth, scaleHeight);
-        // 得到新的图片
-        resource = Bitmap.createBitmap(resource, 0, 0, width, height, matrix2, true);
-        mCanvas.drawBitmap(resource, dp2px(this,20),
-                mNewBitmap.getHeight()-dp2px(this,80), null);
-
-
-        mCanvas.save();
-        mCanvas.restore();
-        return mNewBitmap2;
-    }
-
-    public int sp2px(Context context, float spValue) {
-//        final float fontScale = context.getResources().getDisplayMetrics().scaledDensity;
-//        return (int) (spValue * fontScale + 0.5f);
-        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, spValue, context.getResources().getDisplayMetrics());
-    }
-    public static int dp2px(Context context, float dipValue) {
-        final float scale = context.getResources().getDisplayMetrics().density;
-        return (int) (dipValue * scale + 0.5f);
     }
 
 
@@ -454,6 +349,26 @@ public class JiePingActivity extends AppCompatActivity implements OnClickListene
                 break;
         }
     }
+    public BroadcastReceiver readReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            System.out.println("onReceive=====>"+intent);
+            try {
+                if ("com.example.android.camera2basic".equals(intent.getAction())) {
+                    Uri uri = intent.getData();
+                    ll_take_photo.setVisibility(View.GONE);
+                    ll_save_delete.setVisibility(View.VISIBLE);
+                    mPreviewLayout.setVisibility(View.GONE);
+                    switch_flash.setVisibility(View.GONE);
+                    preview.setVisibility(View.VISIBLE);
+                    System.out.println("uri=======>"+uri);
+                    Glide.with(getApplicationContext()).load(uri).into(preview);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    };
     private int mCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
     private void switchCamera() {
         if (mCamera != null) {
@@ -505,12 +420,19 @@ public class JiePingActivity extends AppCompatActivity implements OnClickListene
         }
         return false;
     }
-
+    private void registerReceiver() {
+        IntentFilter readFilter = new IntentFilter();
+        readFilter.addAction("com.example.android.camera2basic");
+        registerReceiver(readReceiver, readFilter);
+    }
     @Override
     public void onDestroy() {
         super.onDestroy();
         if(mOrientationEventListener != null){
             mOrientationEventListener.disable();
+        }
+        if (readReceiver != null) {
+            unregisterReceiver(readReceiver);
         }
     }
 

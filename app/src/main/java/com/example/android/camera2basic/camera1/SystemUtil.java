@@ -160,6 +160,7 @@ public class SystemUtil {
 
     public static int dp2px(Context context, float dipValue) {
         final float scale = context.getResources().getDisplayMetrics().density;
+        System.out.println("scale======>"+scale);//3.0
         return (int) (dipValue * scale + 0.5f);
     }
 
@@ -185,4 +186,5 @@ public class SystemUtil {
         }
         return point.x;
     }
+
 }
