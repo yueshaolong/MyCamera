@@ -1,5 +1,6 @@
 package com.example.android.camera2basic.screencapture;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -38,6 +39,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.allen.library.SuperTextView;
 import com.bumptech.glide.Glide;
 import com.example.android.camera2basic.R;
 import com.example.android.camera2basic.camera1.CameraPreview;
@@ -45,11 +47,14 @@ import com.example.android.camera2basic.camera1.OverCameraView;
 import com.example.android.camera2basic.camera1.SystemUtil;
 import com.example.android.camera2basic.camera2.SingleMediaScanner;
 import com.example.android.camera2basic.screencapture.FloatWindowsService.Finish;
+import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class CaptureActivity extends AppCompatActivity
         implements OnClickListener, OnTouchListener {
@@ -94,6 +99,17 @@ public class CaptureActivity extends AppCompatActivity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_camera3_basic);
+
+        new RxPermissions(this)
+                .request(Manifest.permission.CAMERA,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.ACCESS_FINE_LOCATION//,
+                )
+                .subscribe(granted -> {
+
+                });
+
         getScreenBrightness();
         rl = findViewById(R.id.rl);
         mPreviewLayout = findViewById(R.id.camera_preview_layout);
@@ -117,6 +133,7 @@ public class CaptureActivity extends AppCompatActivity
         initOrientate();
         requestCapturePermission();
         registerReceiver();
+        ((SuperTextView)findViewById(R.id.stv_time)).setLeftString(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
     }
     public void requestCapturePermission() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
