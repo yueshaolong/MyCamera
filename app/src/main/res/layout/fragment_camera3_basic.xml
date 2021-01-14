@@ -108,7 +108,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginRight="45dp"
-        android:scaleType="fitXY"
+        android:scaleType="centerInside"
         android:src="@drawable/ic_save"
         />
     </LinearLayout>

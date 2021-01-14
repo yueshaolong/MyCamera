@@ -1,8 +1,7 @@
-package com.example.android.camera2basic.camera1;
+package com.ysl.camera.camera1;
 
 import android.content.Context;
 
-import com.amap.api.location.AMapLocation;
 import com.amap.api.location.AMapLocationClient;
 import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationClientOption.AMapLocationMode;
@@ -10,19 +9,14 @@ import com.amap.api.location.AMapLocationClientOption.AMapLocationProtocol;
 import com.amap.api.location.AMapLocationListener;
 import com.amap.api.location.AMapLocationQualityReport;
 import com.amap.api.services.core.LatLonPoint;
-import com.amap.api.services.core.PoiItem;
 import com.amap.api.services.geocoder.GeocodeResult;
 import com.amap.api.services.geocoder.GeocodeSearch;
 import com.amap.api.services.geocoder.GeocodeSearch.OnGeocodeSearchListener;
 import com.amap.api.services.geocoder.RegeocodeQuery;
 import com.amap.api.services.geocoder.RegeocodeResult;
-import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch;
 import com.amap.api.services.poisearch.PoiSearch.OnPoiSearchListener;
 import com.amap.api.services.poisearch.PoiSearch.SearchBound;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class LocationManager {
     private AMapLocationClient locationClient = null;

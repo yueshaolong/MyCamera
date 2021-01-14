@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.camera2basic.camera2;
+package com.ysl.camera.camera2;
 
 import android.Manifest;
 import android.app.Activity;
@@ -35,9 +35,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.bumptech.glide.Glide;
-import com.example.android.camera2basic.R;
-import com.example.android.camera2basic.camera2.ICamera.FlashState;
-import com.example.android.camera2basic.camera2.ICamera.TakePhotoListener;
+import com.ysl.camera.R;
+import com.ysl.camera.camera2.ICamera.FlashState;
+import com.ysl.camera.camera2.ICamera.TakePhotoListener;
 
 import java.io.File;
 

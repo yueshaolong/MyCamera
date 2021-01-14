@@ -1,4 +1,4 @@
-package com.example.android.camera2basic.screencapture;
+package com.ysl.camera.screencapture;
 
 import android.Manifest;
 import android.app.Activity;
@@ -41,12 +41,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.allen.library.SuperTextView;
 import com.bumptech.glide.Glide;
-import com.example.android.camera2basic.R;
-import com.example.android.camera2basic.camera1.CameraPreview;
-import com.example.android.camera2basic.camera1.OverCameraView;
-import com.example.android.camera2basic.camera1.SystemUtil;
-import com.example.android.camera2basic.camera2.SingleMediaScanner;
-import com.example.android.camera2basic.screencapture.FloatWindowsService.Finish;
+import com.ysl.camera.R;
+import com.ysl.camera.camera1.CameraPreview;
+import com.ysl.camera.camera1.OverCameraView;
+import com.ysl.camera.camera1.SystemUtil;
+import com.ysl.camera.camera2.SingleMediaScanner;
+import com.ysl.camera.screencapture.FloatWindowsService.Finish;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import java.io.BufferedOutputStream;
@@ -223,8 +223,43 @@ public class CaptureActivity extends AppCompatActivity
         ll_take_photo.setVisibility(View.GONE);
         ll_save_delete.setVisibility(View.VISIBLE);
         Toast.makeText(this,"拍照",Toast.LENGTH_SHORT).show();
+        System.out.println("-------->执行拍照");
         //TODO 执行截屏
         myBinder.start();
+    }
+    private int getStatusBarHeight(Context context) {
+        int result = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+    public boolean isNavigationBarShow(Activity mActivity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            Display display = mActivity.getWindowManager().getDefaultDisplay();
+            Point size = new Point();
+            Point realSize = new Point();
+            display.getSize(size);
+            display.getRealSize(realSize);
+            return realSize.y != size.y;
+        } else {
+            boolean menu = ViewConfiguration.get(mActivity).hasPermanentMenuKey();
+            boolean back = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK);
+            if (menu || back) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+    private int getNavigationBarHeight(Context context) {
+        int result = 0;
+        int resourceId = context.getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
     //截屏成功后再onactivityResult回调,截取屏幕显示
     @Override
@@ -235,7 +270,8 @@ public class CaptureActivity extends AppCompatActivity
                 if (resultCode == RESULT_OK && data != null) {
                     Intent intent = new Intent(getApplicationContext(), FloatWindowsService.class);
                     intent.putExtra("Intent", data);
-                    intent.putExtra("barHeight",isNavigationBarShow(this)? getNavigationBarHeight(this):0);
+                    intent.putExtra("navigationBarHeight",isNavigationBarShow(this)? getNavigationBarHeight(this):0);
+                    intent.putExtra("statusBarHeight",getStatusBarHeight(this));
                     intent.putExtra("imagePath",createFile());
                     bindService(intent, new ServiceConnection() {
                         @Override
@@ -245,6 +281,7 @@ public class CaptureActivity extends AppCompatActivity
                             myBinder.getService().setFinish(new Finish() {
                                 @Override
                                 public void setImage(Bitmap bitmap) {
+                                    System.out.println("-------<设置图片");
                                     newBitmap = bitmap;
                                     ll_take_photo.setVisibility(View.GONE);
                                     ll_photo_message.setVisibility(View.GONE);
@@ -265,41 +302,6 @@ public class CaptureActivity extends AppCompatActivity
                 }
                 break;
         }
-    }
-    //NavigationBar状态是否是显示
-    public boolean isNavigationBarShow(Activity mActivity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            Display display = mActivity.getWindowManager().getDefaultDisplay();
-            Point size = new Point();
-            Point realSize = new Point();
-            display.getSize(size);
-            display.getRealSize(realSize);
-            return realSize.y != size.y;
-        } else {
-            boolean menu = ViewConfiguration.get(mActivity).hasPermanentMenuKey();
-            boolean back = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK);
-            if (menu || back) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-    }
-    //获取NavigationBar高度
-    public static int getNavigationBarHeight(Context context) {
-        return getSizeByReflection(context, "navigation_bar_height");
-    }
-    public static int getSizeByReflection(Context context, String field) {
-        int size = -1;
-        try {
-            Class<?> clazz = Class.forName("com.android.internal.R$dimen");
-            Object object = clazz.newInstance();
-            int height = Integer.parseInt(clazz.getField(field).get(object).toString());
-            size = context.getResources().getDimensionPixelSize(height);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return size;
     }
     private void switchFlash() {
         isFlashing = !isFlashing;
@@ -328,7 +330,7 @@ public class CaptureActivity extends AppCompatActivity
         if (null == bitmap) return;
         try {
             BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(mFile));
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, bos);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos);
             bos.flush();
             bos.close();
         } catch (IOException e) {
@@ -356,13 +358,21 @@ public class CaptureActivity extends AppCompatActivity
                 cancleSavePhoto();
                 break;
             case R.id.save:
+                System.out.println("--------->开始保存");
                 saveBitmapFile(newBitmap);
+                System.out.println("--------->刷新");
                 new SingleMediaScanner(this, mFile.getAbsolutePath(), new SingleMediaScanner.ScanListener() {
                     @Override public void onScanFinish() {
                         Log.i("SingleMediaScanner", "scan finish!");
                     }
                 });
-                this.finish();
+                System.out.println("---------<结束保存");
+                Intent intent = new Intent();
+                intent.putExtra("imagePath", mFile.getAbsolutePath());
+                Uri uri = ImagePathUriUtil.path2Uri(this, mFile.getAbsolutePath());//拍完照插入到数据库
+                intent.putExtra("imageUri", uri.toString());
+                setResult(Activity.RESULT_OK, intent);
+                finish();
                 break;
         }
     }
@@ -371,7 +381,7 @@ public class CaptureActivity extends AppCompatActivity
         public void onReceive(Context context, Intent intent) {
             System.out.println("onReceive=====>"+intent);
             try {
-                if ("com.example.android.camera2basic".equals(intent.getAction())) {
+                if ("com.ysl.camera".equals(intent.getAction())) {
                     Uri uri = intent.getData();
                     ll_take_photo.setVisibility(View.GONE);
                     ll_save_delete.setVisibility(View.VISIBLE);
@@ -439,7 +449,7 @@ public class CaptureActivity extends AppCompatActivity
     }
     private void registerReceiver() {
         IntentFilter readFilter = new IntentFilter();
-        readFilter.addAction("com.example.android.camera2basic");
+        readFilter.addAction("com.ysl.camera");
         registerReceiver(readReceiver, readFilter);
     }
     @Override

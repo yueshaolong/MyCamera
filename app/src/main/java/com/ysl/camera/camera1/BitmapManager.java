@@ -1,4 +1,4 @@
-package com.example.android.camera2basic.camera1;
+package com.ysl.camera.camera1;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -7,29 +7,25 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Paint.Align;
 import android.graphics.RectF;
-import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
-import android.text.Layout;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 
-import com.example.android.camera2basic.R;
+import androidx.core.content.FileProvider;
+
+import com.ysl.camera.R;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import androidx.core.content.FileProvider;
 
 public class BitmapManager {
     private Context context;

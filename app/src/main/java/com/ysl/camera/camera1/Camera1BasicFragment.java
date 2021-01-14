@@ -1,12 +1,14 @@
-package com.example.android.camera2basic.camera1;
+package com.ysl.camera.camera1;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.OrientationEventListener;
@@ -36,14 +38,14 @@ import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch.OnPoiSearchListener;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.viewholder.BaseViewHolder;
-import com.example.android.camera2basic.R;
-import com.example.android.camera2basic.camera1.BitmapManager.OnBitmapCompleteListener;
-import com.example.android.camera2basic.camera2.SingleMediaScanner;
-import com.example.android.camera2basic.weiget.EmptyCallback;
-import com.example.android.camera2basic.weiget.LoadingCallback;
 import com.kingja.loadsir.core.LoadService;
 import com.kingja.loadsir.core.LoadSir;
 import com.scwang.smartrefresh.layout.SmartRefreshLayout;
+import com.ysl.camera.R;
+import com.ysl.camera.camera1.BitmapManager.OnBitmapCompleteListener;
+import com.ysl.camera.screencapture.ImagePathUriUtil;
+import com.ysl.camera.weiget.EmptyCallback;
+import com.ysl.camera.weiget.LoadingCallback;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -474,23 +476,6 @@ public class Camera1BasicFragment extends Fragment
                 break;
             case R.id.take_photo:
                 takePhoto();
-//                View cv = getActivity().getWindow().getDecorView();
-//                cv.setDrawingCacheEnabled(true);
-//                cv.buildDrawingCache();
-//                Bitmap bmp = cv.getDrawingCache();
-//                if (bmp == null) {
-//                    return;
-//                }
-//                bmp.setHasAlpha(false);
-//                bmp.prepareToDraw();
-//                Bitmap screenshot;
-//                screenshot = Bitmap.createBitmap(cameraPreview.getWidth(), cameraPreview.getHeight(), Bitmap.Config.RGB_565);
-//                Canvas c = new Canvas(screenshot);
-//                c.translate(-cameraPreview.getScrollX(), -cameraPreview.getScrollY());
-//                cameraPreview.draw(c);
-//                preview.setVisibility(View.VISIBLE);
-//                preview.setImageBitmap(screenshot);
-
                 break;
             case R.id.switch_flash:
                 switchFlash();
@@ -506,11 +491,11 @@ public class Camera1BasicFragment extends Fragment
                 break;
             case R.id.save:
                 bitmapManager.saveBitmapFile(mFile, newBitmap);
-                new SingleMediaScanner(getContext(), mFile.getAbsolutePath(), new SingleMediaScanner.ScanListener() {
-                    @Override public void onScanFinish() {
-                        Log.i("SingleMediaScanner", "scan finish!");
-                    }
-                });
+                Intent intent = new Intent();
+                intent.putExtra("imagePath", mFile.getAbsolutePath());
+                Uri uri = ImagePathUriUtil.path2Uri(getActivity(), mFile.getAbsolutePath());//拍完照插入到数据库
+                intent.putExtra("imageUri", uri.toString());
+                getActivity().setResult(Activity.RESULT_OK, intent);
                 getActivity().finish();
                 break;
             case R.id.tv_position:

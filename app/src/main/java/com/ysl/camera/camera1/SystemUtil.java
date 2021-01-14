@@ -1,4 +1,4 @@
-package com.example.android.camera2basic.camera1;
+package com.ysl.camera.camera1;
 
 import android.content.Context;
 import android.content.Intent;

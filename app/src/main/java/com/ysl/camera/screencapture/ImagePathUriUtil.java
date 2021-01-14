@@ -1,4 +1,4 @@
-package com.example.android.camera2basic.screencapture;
+package com.ysl.camera.screencapture;
 
 import android.content.ContentValues;
 import android.content.Context;

@@ -1,4 +1,4 @@
-package com.example.android.camera2basic;
+package com.ysl.camera;
 
 import android.Manifest;
 import android.app.Activity;
@@ -11,13 +11,17 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
 import com.tbruyelle.rxpermissions2.RxPermissions;
+import com.ysl.camera.camera1.CameraActivity;
+import com.ysl.camera.screencapture.CaptureActivity;
 
 import java.io.File;
 import java.util.Iterator;
@@ -29,6 +33,7 @@ public class FileActivity extends AppCompatActivity {
 
     private String path;
     private TextView tv;
+    private ImageView imageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +42,10 @@ public class FileActivity extends AppCompatActivity {
         new RxPermissions(this)
                 .request(
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.ACCESS_FINE_LOCATION
                 )
                 .subscribe();
         tv = findViewById(R.id.tv);
@@ -99,6 +107,19 @@ public class FileActivity extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.btn_sy).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivityForResult(new Intent(FileActivity.this, CameraActivity.class),100);
+            }
+        });
+        findViewById(R.id.btn_jp).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivityForResult(new Intent(FileActivity.this, CaptureActivity.class),100);
+            }
+        });
+        imageView = findViewById(R.id.iv);
     }
 
     // 获取文件的真实路径
@@ -161,6 +182,12 @@ public class FileActivity extends AppCompatActivity {
 
                 path = getFilePathFromUri(this, uri);
                 tv.setText(path);
+                break;
+            case 100:
+                imageView.setVisibility(View.VISIBLE);
+                String imagePath = data.getStringExtra("imagePath");
+                String imageUri = data.getStringExtra("imageUri");
+                Glide.with(this).load(imageUri).centerInside().into(imageView);
                 break;
         }
     }

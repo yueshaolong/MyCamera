@@ -1,11 +1,11 @@
-package com.example.android.camera2basic.weiget;
+package com.ysl.camera.weiget;
 
 
 import android.content.Context;
 import android.view.View;
 import android.widget.TextView;
 
-import com.example.android.camera2basic.R;
+import com.ysl.camera.R;
 import com.kingja.loadsir.callback.Callback;
 
 public class ErrorCallback extends Callback {

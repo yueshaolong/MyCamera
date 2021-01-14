@@ -1,4 +1,4 @@
-package com.example.android.camera2basic.camera1;
+package com.ysl.camera.camera1;
 
 import android.app.Activity;
 import android.content.Context;
@@ -11,7 +11,6 @@ import android.view.SurfaceView;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.SortedSet;
 
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceHolder mHolder;

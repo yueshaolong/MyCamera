@@ -1,4 +1,4 @@
-package com.example.android.camera2basic.screencapture;
+package com.ysl.camera.screencapture;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -20,7 +20,7 @@ import android.os.IBinder;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
 
-import com.example.android.camera2basic.camera1.SystemUtil;
+import com.ysl.camera.camera1.SystemUtil;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -39,7 +39,8 @@ public class FloatWindowsService extends Service {
     private int mScreenHeight;
     private int mScreenDensity;
     private MediaProjectionManager mediaProjectionManager;
-    private int barHeight;
+    private int navigationBarHeight;
+    private int statusBarHeight;
     private String imagePath;
 
     @SuppressLint("WrongConstant")
@@ -48,7 +49,8 @@ public class FloatWindowsService extends Service {
         super.onCreate();
         mWindowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics metrics = new DisplayMetrics();
-        mWindowManager.getDefaultDisplay().getMetrics(metrics);
+//        mWindowManager.getDefaultDisplay().getMetrics(metrics);//2075 不包含状态栏，底部导航栏
+        mWindowManager.getDefaultDisplay().getRealMetrics(metrics);//2280
         mScreenDensity = metrics.densityDpi;
         mScreenWidth = metrics.widthPixels;
         mScreenHeight = metrics.heightPixels;
@@ -61,8 +63,10 @@ public class FloatWindowsService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         mResultData = intent.getParcelableExtra("Intent");
-        barHeight = intent.getIntExtra("barHeight", 0);
+        navigationBarHeight = intent.getIntExtra("navigationBarHeight", 0);
+        statusBarHeight = intent.getIntExtra("statusBarHeight", 0);
         imagePath = intent.getStringExtra("imagePath");
+        System.out.println("statusBarHeight="+statusBarHeight+"   navigationBarHeight="+navigationBarHeight);
         return new MyBinder();
     }
     public class MyBinder extends Binder {
@@ -82,37 +86,8 @@ public class FloatWindowsService extends Service {
             return;
         }
         startCapture();
-//        Handler handler1 = new Handler();
-//        handler1.postDelayed(new Runnable() {
-//            public void run() {
-//                startVirtual();
-//            }
-//        }, 5);
-//
-//        handler1.postDelayed(new Runnable() {
-//            public void run() {
-//                startCapture();
-//            }
-//        }, 30);
     }
 
-//    public void startVirtual() {
-//        if (mMediaProjection != null) {
-//            virtualDisplay();
-//        } else {
-//            setUpMediaProjection();
-//            virtualDisplay();
-//        }
-//    }
-//    public void setUpMediaProjection() {
-//        if (mResultData == null) {
-//            Intent intent = new Intent(Intent.ACTION_MAIN);
-//            intent.addCategory(Intent.CATEGORY_LAUNCHER);
-//            startActivity(intent);
-//        } else {
-//            mMediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, mResultData);
-//        }
-//    }
     private void startCapture() {
         mMediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, mResultData);
         mVirtualDisplay = mMediaProjection.createVirtualDisplay("screen-mirror",
@@ -137,10 +112,12 @@ public class FloatWindowsService extends Service {
             Bitmap bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height,
                     Bitmap.Config.ARGB_8888);
             bitmap.copyPixelsFromBuffer(buffer);
-            bitmap = Bitmap.createBitmap(bitmap, 0, 0, width,
+            bitmap = Bitmap.createBitmap(bitmap, 0, statusBarHeight, width,
                     height
                             - SystemUtil.dp2px(FloatWindowsService.this,114)
-                            -barHeight);
+                            - navigationBarHeight
+                            - statusBarHeight -28
+            );
             image.close();
             if(finish != null){
                 finish.setImage(bitmap);
@@ -161,7 +138,7 @@ public class FloatWindowsService extends Service {
 //
 //                        Uri contentUri = ImagePathUriUtil.path2Uri(getApplicationContext(), fileImage.getAbsolutePath());
 //                        System.out.println("contentUri-====="+contentUri);
-////                        Intent media = new Intent("com.example.android.camera2basic");
+////                        Intent media = new Intent("com.ysl.camera");
 ////                        media.setData(contentUri);
 ////                        FloatWindowsService.this.sendBroadcast(media);
 //

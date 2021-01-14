@@ -1,4 +1,4 @@
-package com.example.android.camera2basic.camera1;
+package com.ysl.camera.camera1;
 
 import android.graphics.Rect;
 import android.view.View;

@@ -1,8 +1,4 @@
-package com.example.android.camera2basic.camera2;
-
-import android.util.Size;
-import android.view.Surface;
-import android.view.TextureView;
+package com.ysl.camera.camera2;
 
 import java.io.File;
 

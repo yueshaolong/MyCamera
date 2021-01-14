@@ -14,28 +14,27 @@
  * limitations under the License.
  */
 
-package com.example.android.camera2basic;
+package com.ysl.camera.camera1;
 
 import android.Manifest;
-import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import io.reactivex.functions.Consumer;
-import io.reactivex.plugins.RxJavaPlugins;
 
-import com.example.android.camera2basic.camera1.Camera1BasicFragment;
-import com.example.android.camera2basic.camera2.Camera2BasicFragment;
-import com.example.android.camera2basic.weiget.EmptyCallback;
-import com.example.android.camera2basic.weiget.ErrorCallback;
-import com.example.android.camera2basic.weiget.LoadingCallback;
-import com.example.android.camera2basic.weiget.PlaceholderCallback;
-import com.example.android.camera2basic.weiget.TimeoutCallback;
 import com.kingja.loadsir.core.LoadSir;
 import com.tbruyelle.rxpermissions2.RxPermissions;
+import com.ysl.camera.R;
+import com.ysl.camera.weiget.EmptyCallback;
+import com.ysl.camera.weiget.ErrorCallback;
+import com.ysl.camera.weiget.LoadingCallback;
+import com.ysl.camera.weiget.PlaceholderCallback;
+import com.ysl.camera.weiget.TimeoutCallback;
+
+import io.reactivex.functions.Consumer;
+import io.reactivex.plugins.RxJavaPlugins;
 
 public class CameraActivity extends AppCompatActivity {
 

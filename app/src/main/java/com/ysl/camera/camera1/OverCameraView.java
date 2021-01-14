@@ -1,4 +1,4 @@
-package com.example.android.camera2basic.camera1;
+package com.ysl.camera.camera1;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -11,10 +11,10 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.WindowManager;
 
+import androidx.appcompat.widget.AppCompatImageView;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import androidx.appcompat.widget.AppCompatImageView;
 
 public class OverCameraView extends AppCompatImageView {
     private Context context;

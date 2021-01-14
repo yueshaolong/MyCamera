@@ -1,33 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <Button
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:id="@+id/btn"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="选择文件"/>
-    <Button
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        android:id="@+id/btn2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="选择文件2"/>
+        android:background="@color/blue"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="选择文件"/>
+        <Button
+            android:layout_alignParentRight="true"
+            android:id="@+id/btn2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="选择文件2"/>
+        <Button
+            android:layout_alignParentBottom="true"
+            android:id="@+id/btn_sy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="拍照+水印"/>
+        <Button
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:id="@+id/btn_jp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="拍照+截屏"/>
+    </LinearLayout>
 
     <TextView
+        android:background="@color/blue"
+        android:layout_centerInParent="true"
         android:id="@+id/tv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:text="Hello World!" />
+    <ImageView
+        android:id="@+id/iv"
+        android:visibility="visible"
+        android:background="@color/yellow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</LinearLayout>
