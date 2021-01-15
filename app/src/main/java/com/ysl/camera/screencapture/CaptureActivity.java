@@ -1,32 +1,29 @@
 package com.ysl.camera.screencapture;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.hardware.Camera;
+import android.hardware.SensorManager;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Display;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -40,14 +37,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.allen.library.SuperTextView;
-import com.bumptech.glide.Glide;
+import com.tbruyelle.rxpermissions2.RxPermissions;
 import com.ysl.camera.R;
 import com.ysl.camera.camera1.CameraPreview;
-import com.ysl.camera.camera1.OverCameraView;
 import com.ysl.camera.camera1.SystemUtil;
 import com.ysl.camera.camera2.SingleMediaScanner;
 import com.ysl.camera.screencapture.FloatWindowsService.Finish;
-import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -57,7 +52,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class CaptureActivity extends AppCompatActivity
-        implements OnClickListener, OnTouchListener {
+        implements OnClickListener {
     private static final String TAG = "CaptureActivity";
     private static final int REQUEST_MEDIA_PROJECTION = 0;
     private ImageView preview;
@@ -68,32 +63,13 @@ public class CaptureActivity extends AppCompatActivity
     private File mFile;
     private String fileName;
     private FrameLayout mPreviewLayout;
-    /**
-     * 聚焦视图
-     */
-    private OverCameraView mOverCameraView;
-    /**
-     * 相机类
-     */
     private Camera mCamera;
-    /**
-     * 是否开启闪光灯
-     */
     private boolean isFlashing;
-    /**
-     * 拍照标记
-     */
-    private boolean isTakePhoto;
-    /**
-     * 是否正在聚焦
-     */
-    private boolean isFoucing;
-    private Handler mHandler = new Handler();
-    private Runnable mRunnable;
     private Bitmap newBitmap;
     private CameraPreview cameraPreview;
-    private RelativeLayout rl;
     private FloatWindowsService.MyBinder myBinder;
+    private int screenWidth;
+    private int screenHeight;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -111,7 +87,10 @@ public class CaptureActivity extends AppCompatActivity
                 });
 
         getScreenBrightness();
-        rl = findViewById(R.id.rl);
+        screenHeight = SystemUtil.getScreenHeight(this);
+        screenWidth = SystemUtil.getScreenWidth(this);
+
+        RelativeLayout rl = findViewById(R.id.rl);
         mPreviewLayout = findViewById(R.id.camera_preview_layout);
         preview = findViewById(R.id.preview);
         ll_take_photo = findViewById(R.id.ll_take_photo);
@@ -129,10 +108,8 @@ public class CaptureActivity extends AppCompatActivity
         findViewById(R.id.switch_camera).setOnClickListener(this);
         findViewById(R.id.delete).setOnClickListener(this);
         findViewById(R.id.save).setOnClickListener(this);
-        findViewById(R.id.preview).setOnTouchListener(this);
         initOrientate();
         requestCapturePermission();
-        registerReceiver();
         ((SuperTextView)findViewById(R.id.stv_time)).setLeftString(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
     }
     public void requestCapturePermission() {
@@ -151,20 +128,19 @@ public class CaptureActivity extends AppCompatActivity
     private OrientationEventListener mOrientationEventListener;
     //拍照时的传感器方向
     private int takePhotoOrientation = 0;
-    /**
-     * 初始化传感器方向
-     */
+    //初始化传感器方向
+    private int oldOrientation = 0;
     private void  initOrientate(){
         if(mOrientationEventListener == null){
-            mOrientationEventListener = new OrientationEventListener(this) {
+            mOrientationEventListener = new OrientationEventListener(this, SensorManager.SENSOR_DELAY_UI) {
                 @Override
                 public void onOrientationChanged(int orientation) {
-                    System.out.println("------->"+orientation);
                     // i的范围是0-359
                     // 屏幕左边在顶部的时候 i = 90;
                     // 屏幕顶部在底部的时候 i = 180;
                     // 屏幕右边在底部的时候 i = 270;
                     // 正常的情况默认i = 0;
+//                    System.out.println("orientation------>"+orientation);
                     if(45 <= orientation && orientation < 135){
                         takePhotoOrientation = 180;
                     } else if(135 <= orientation && orientation < 225){
@@ -174,12 +150,66 @@ public class CaptureActivity extends AppCompatActivity
                     } else {
                         takePhotoOrientation = 90;
                     }
+//                    System.out.println("takePhotoOrientation------>"+takePhotoOrientation);
+
+
+                    if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+                        return; // 手机平放时，检测不到有效的角度
+                    }
+                    // 只检测是否有四个角度的改变
+                    if (orientation < 60 && orientation > 30) { // 动画0度与接口360度相反,增加下限抵消0度影响
+                        orientation = 0;
+                    } else if (orientation > 70 && orientation < 110) { // 动画90度与接口270度相反
+                        orientation = 270;
+                    } else if (orientation > 160 && orientation < 200) { // 180度
+                        orientation = 180;
+                    } else if (orientation > 240 && orientation < 300) {
+                        orientation = 90;
+                    } else if (orientation > 320 && orientation < 340) {// 减少上限减少360度的影响
+                        orientation = 0;
+                    } else {
+                        return;
+                    }
+                    if (oldOrientation != orientation) {
+                        ObjectAnimator rotation = ObjectAnimator
+                                .ofFloat(ll_photo_message, "Rotation", oldOrientation,
+                                        orientation).setDuration(0);
+                        int photoMessageHeight = ll_photo_message.getHeight();
+//                        System.out.println("ll_photo_message--h---->"+photoMessageHeight+"--w---->"+screenWidth);
+//                        System.out.println("orientation------>"+orientation);
+                        if (orientation == 270) {
+                            ll_photo_message.setPivotX(screenWidth/2);
+                            ll_photo_message.setPivotY(-(screenWidth/2-photoMessageHeight));
+                        }else if(orientation == 90){
+                            ll_photo_message.setPivotX(screenWidth/2);
+                            ll_photo_message.setPivotY(-(screenWidth/2-photoMessageHeight));
+                        }else if(orientation == 180){
+                            ll_photo_message.setPivotX(screenWidth/2);
+                            ll_photo_message.setPivotY(-(screenWidth/2-photoMessageHeight));
+                        }else {
+                            ll_photo_message.setPivotX(0);
+                            ll_photo_message.setPivotY(0);
+                        }
+                        rotation.start();
+                        if (orientation == 270 || orientation == 0){
+                            ObjectAnimator translationY = ObjectAnimator.ofFloat(ll_photo_message, "translationY",
+                                    -(cameraPreview.getHeight() - screenWidth), 0);
+                            translationY.setDuration(0);
+                            translationY.start();
+                        } else if(orientation == 90 || orientation == 180){
+                            ObjectAnimator translationY = ObjectAnimator.ofFloat(ll_photo_message, "translationY",
+                                    0,-(cameraPreview.getHeight() - screenWidth));
+                            translationY.setDuration(0);
+                            translationY.start();
+                        }
+                        ll_photo_message.clearAnimation();
+                        oldOrientation = orientation;
+                    }
                 }
             };
 
         }
         mOrientationEventListener.enable();
-
     }
 
     /**
@@ -202,24 +232,7 @@ public class CaptureActivity extends AppCompatActivity
         mFile = new File(mIVMSFolder.getAbsolutePath(), fileName);
         return mFile.getAbsolutePath();
     }
-    @Override
-    public void onResume() {
-        super.onResume();
-        openCamera();
-    }
-
-    private Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
-        @Override
-        public void onAutoFocus(boolean success, Camera camera) {
-            isFoucing = false;
-            mOverCameraView.setFoucuing(false);
-            mOverCameraView.disDrawTouchFocusRect();
-            //停止聚焦超时回调
-            mHandler.removeCallbacks(mRunnable);
-        }
-    };
     private void takePhoto() {
-        isTakePhoto = true;
         ll_take_photo.setVisibility(View.GONE);
         ll_save_delete.setVisibility(View.VISIBLE);
         Toast.makeText(this,"拍照",Toast.LENGTH_SHORT).show();
@@ -261,7 +274,7 @@ public class CaptureActivity extends AppCompatActivity
         }
         return result;
     }
-    //截屏成功后再onactivityResult回调,截取屏幕显示
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -290,6 +303,8 @@ public class CaptureActivity extends AppCompatActivity
                                     switch_flash.setVisibility(View.GONE);
                                     preview.setVisibility(View.VISIBLE);
                                     preview.setImageBitmap(bitmap);
+
+                                    cameraPreview.setVisibility(View.GONE);
                                 }
                             });
                         }
@@ -299,6 +314,8 @@ public class CaptureActivity extends AppCompatActivity
 
                         }
                     },BIND_AUTO_CREATE);
+
+                    openCamera();
                 }
                 break;
         }
@@ -323,8 +340,8 @@ public class CaptureActivity extends AppCompatActivity
         if (mFile != null && mFile.exists()) mFile.delete();
         preview.setVisibility(View.GONE);
         //开始预览
-        mCamera.startPreview();
-        isTakePhoto = false;
+        cameraPreview.setVisibility(View.VISIBLE);
+//        mCamera.startPreview();
     }
     public void saveBitmapFile(Bitmap bitmap){
         if (null == bitmap) return;
@@ -376,26 +393,6 @@ public class CaptureActivity extends AppCompatActivity
                 break;
         }
     }
-    public BroadcastReceiver readReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            System.out.println("onReceive=====>"+intent);
-            try {
-                if ("com.ysl.camera".equals(intent.getAction())) {
-                    Uri uri = intent.getData();
-                    ll_take_photo.setVisibility(View.GONE);
-                    ll_save_delete.setVisibility(View.VISIBLE);
-                    mPreviewLayout.setVisibility(View.GONE);
-                    switch_flash.setVisibility(View.GONE);
-                    preview.setVisibility(View.VISIBLE);
-                    System.out.println("uri=======>"+uri);
-                    Glide.with(getApplicationContext()).load(uri).into(preview);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    };
     private int mCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
     private void switchCamera() {
         if (mCamera != null) {
@@ -404,7 +401,6 @@ public class CaptureActivity extends AppCompatActivity
             mCamera.setPreviewCallback(null);
             mCamera.release();
             mCamera = null;
-            mHandler.removeCallbacks(mRunnable);
         }
         //在Android P之前 Android设备仍然最多只有前后两个摄像头，在Android p后支持多个摄像头 用户想打开哪个就打开哪个
         mCameraId = (mCameraId + 1) % Camera.getNumberOfCameras();
@@ -425,18 +421,10 @@ public class CaptureActivity extends AppCompatActivity
         mCamera = Camera.open(mCameraId);
         cameraPreview = new CameraPreview(this, mCamera);
         cameraPreview.setmCameraId(mCameraId);
-        if (mOverCameraView == null) {
-            mOverCameraView = new OverCameraView(this);
-        }
         mPreviewLayout.removeAllViews();
         mPreviewLayout.addView(cameraPreview);
-        mPreviewLayout.addView(mOverCameraView);
     }
-    /**
-     * 判断是否支持某个相机
-     * @param faceOrBack 前置还是后置
-     */
-    private boolean isSupport(int faceOrBack) {
+    private boolean isSupport(int faceOrBack) {//判断是否支持某个相机
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
             //返回相机信息
@@ -447,104 +435,14 @@ public class CaptureActivity extends AppCompatActivity
         }
         return false;
     }
-    private void registerReceiver() {
-        IntentFilter readFilter = new IntentFilter();
-        readFilter.addAction("com.ysl.camera");
-        registerReceiver(readReceiver, readFilter);
-    }
     @Override
     public void onDestroy() {
         super.onDestroy();
         if(mOrientationEventListener != null){
             mOrientationEventListener.disable();
         }
-        if (readReceiver != null) {
-            unregisterReceiver(readReceiver);
+        if (mCamera != null) {
+            mCamera.release();
         }
-    }
-
-    private static final int MODE_INIT = 0;
-    //两个触摸点触摸屏幕状态
-    private static final int MODE_ZOOM = 1;
-    //标识模式
-    private int mode = MODE_INIT;
-    private boolean isMove = false;
-    //两点的初始距离
-    private float startDis;
-    @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        //无论多少跟手指加进来，都是MotionEvent.ACTION_DWON MotionEvent.ACTION_POINTER_DOWN
-        //MotionEvent.ACTION_MOVE:
-        switch (v.getId()) {
-            case R.id.preview:
-                if (!isFoucing) {
-                    float x = event.getX();
-                    float y = event.getY();
-                    isFoucing = true;
-                    if (mCamera != null && !isTakePhoto) {
-                        mOverCameraView.setTouchFoucusRect(mCamera, autoFocusCallback, x, y);
-                    }
-                    mRunnable = () -> {
-                        isFoucing = false;
-                        mOverCameraView.setFoucuing(false);
-                        mOverCameraView.disDrawTouchFocusRect();
-                    };
-                    //设置聚焦超时
-                    mHandler.postDelayed(mRunnable, 3000);
-                }
-                break;
-            default:
-                switch (event.getAction() & MotionEvent.ACTION_MASK) {
-                    //手指按下屏幕
-                    case MotionEvent.ACTION_DOWN:
-                        mode = MODE_INIT;
-                        break;
-                    //当屏幕上已经有触摸点按下的状态的时候，再有新的触摸点被按下时会触发
-                    case MotionEvent.ACTION_POINTER_DOWN:
-                        mode = MODE_ZOOM;
-                        //计算两个手指的距离 两点的距离
-                        startDis = SystemUtil.twoPointDistance(event);
-                        break;
-                    //移动的时候回调
-                    case MotionEvent.ACTION_MOVE:
-                        isMove = true;
-                        //这里主要判断有两个触摸点的时候才触发
-                        if (mode == MODE_ZOOM) {
-                            //只有两个点同时触屏才执行
-                            if (event.getPointerCount() < 2) {
-                                return true;
-                            }
-                            //获取结束的距离
-                            float endDis = SystemUtil.twoPointDistance(event);
-                            //每变化10f zoom变1
-                            int scale = (int) ((endDis - startDis) / 10f);
-                            if (scale >= 1 || scale <= -1) {
-                                int zoom = cameraPreview.getZoom() + scale;
-                                //判断zoom是否超出变焦距离
-                                if (zoom > cameraPreview.getMaxZoom()) {
-                                    zoom = cameraPreview.getMaxZoom();
-                                }
-                                //如果系数小于0
-                                if (zoom < 0) {
-                                    zoom = 0;
-                                }
-                                //设置焦距
-                                cameraPreview.setZoom(zoom);
-                                //将最后一次的距离设为当前距离
-                                startDis = endDis;
-                            }
-                        }
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        //判断是否点击屏幕 如果是自动聚焦
-                        if (isMove == false) {
-                            //自动聚焦
-                            cameraPreview.autoFoucus();
-                        }
-                        isMove = false;
-                        break;
-                }
-        }
-        return true;
     }
 }

@@ -16,6 +16,7 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
@@ -30,15 +31,16 @@ import java.nio.ByteBuffer;
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class FloatWindowsService extends Service {
+    private MediaProjectionManager mediaProjectionManager;
     private MediaProjection mMediaProjection;
     private VirtualDisplay mVirtualDisplay;
-    private Intent mResultData;
     private ImageReader mImageReader;
+    private Image image;
     private WindowManager mWindowManager;
     private int mScreenWidth;
     private int mScreenHeight;
     private int mScreenDensity;
-    private MediaProjectionManager mediaProjectionManager;
+    private Intent mResultData;
     private int navigationBarHeight;
     private int statusBarHeight;
     private String imagePath;
@@ -66,9 +68,22 @@ public class FloatWindowsService extends Service {
         navigationBarHeight = intent.getIntExtra("navigationBarHeight", 0);
         statusBarHeight = intent.getIntExtra("statusBarHeight", 0);
         imagePath = intent.getStringExtra("imagePath");
-        System.out.println("statusBarHeight="+statusBarHeight+"   navigationBarHeight="+navigationBarHeight);
+        System.out.println("----》 statusBarHeight="+statusBarHeight+"   navigationBarHeight="+navigationBarHeight);
+        mMediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, mResultData);
         return new MyBinder();
     }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+
+            }
+        },new Handler());
+        return super.onStartCommand(intent, flags, startId);
+    }
+
     public class MyBinder extends Binder {
         public void start(){
             startScreenShot();
@@ -89,12 +104,12 @@ public class FloatWindowsService extends Service {
     }
 
     private void startCapture() {
-        mMediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, mResultData);
+//        mMediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, mResultData);
         mVirtualDisplay = mMediaProjection.createVirtualDisplay("screen-mirror",
                 mScreenWidth, mScreenHeight, mScreenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 mImageReader.getSurface(), null, null);
 
-        Image image = mImageReader.acquireLatestImage();
+        image = mImageReader.acquireLatestImage();
         if (image == null) {
             startScreenShot();
         } else {
@@ -122,35 +137,6 @@ public class FloatWindowsService extends Service {
             if(finish != null){
                 finish.setImage(bitmap);
             }
-
-//            File fileImage = null;
-//            if (bitmap != null) {
-//                try {
-//                    fileImage = new File(imagePath);
-//                    if (!fileImage.exists()) {
-//                        fileImage.createNewFile();
-//                    }
-//                    FileOutputStream out = new FileOutputStream(fileImage);
-//                    if (out != null) {
-//                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-//                        out.flush();
-//                        out.close();
-//
-//                        Uri contentUri = ImagePathUriUtil.path2Uri(getApplicationContext(), fileImage.getAbsolutePath());
-//                        System.out.println("contentUri-====="+contentUri);
-////                        Intent media = new Intent("com.ysl.camera");
-////                        media.setData(contentUri);
-////                        FloatWindowsService.this.sendBroadcast(media);
-//
-//                    }
-//                } catch (FileNotFoundException e) {
-//                    e.printStackTrace();
-//                    fileImage = null;
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                    fileImage = null;
-//                }
-//            }
         }
     }
 
@@ -167,6 +153,12 @@ public class FloatWindowsService extends Service {
         }
         mVirtualDisplay.release();
         mVirtualDisplay = null;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        mImageReader.close();
+        return super.onUnbind(intent);
     }
 
     @Override

@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -148,7 +149,7 @@ public class Camera1BasicFragment extends Fragment
     private int takePhotoOrientation = 0;
     private void  initOrientate(){
         if(mOrientationEventListener == null){
-            mOrientationEventListener = new OrientationEventListener(getActivity()) {
+            mOrientationEventListener = new OrientationEventListener(getActivity(), SensorManager.SENSOR_DELAY_UI) {
                 @Override
                 public void onOrientationChanged(int orientation) {
                     // i的范围是0-359
@@ -156,6 +157,7 @@ public class Camera1BasicFragment extends Fragment
                     // 屏幕顶部在底部的时候 i = 180;
                     // 屏幕右边在底部的时候 i = 270;
                     // 正常的情况默认i = 0;
+//                    System.out.println("orientation------>"+orientation);
                     if(45 <= orientation && orientation < 135){
                         takePhotoOrientation = 180;
                     } else if(135 <= orientation && orientation < 225){
@@ -165,10 +167,15 @@ public class Camera1BasicFragment extends Fragment
                     } else {
                         takePhotoOrientation = 90;
                     }
+//                    System.out.println("takePhotoOrientation------>"+takePhotoOrientation);
 
+
+                    if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+                        return; // 手机平放时，检测不到有效的角度
+                    }
                     // 只检测是否有四个角度的改变
                     if (orientation < 60 && orientation > 30) { // 动画0度与接口360度相反,增加下限抵消0度影响
-                        orientation = 360;
+                        orientation = 0;
                     } else if (orientation > 70 && orientation < 110) { // 动画90度与接口270度相反
                         orientation = 270;
                     } else if (orientation > 160 && orientation < 200) { // 180度
@@ -185,8 +192,8 @@ public class Camera1BasicFragment extends Fragment
                                 .ofFloat(ll_photo_message, "Rotation", oldOrientation,
                                         orientation).setDuration(0);
                         int photoMessageHeight = ll_photo_message.getHeight();
-                        System.out.println("ll_photo_message--h---->"+photoMessageHeight+"--w---->"+screenWidth);
-                        System.out.println("orientation------>"+orientation);
+//                        System.out.println("ll_photo_message--h---->"+photoMessageHeight+"--w---->"+screenWidth);
+//                        System.out.println("orientation------>"+orientation);
                         if (orientation == 270) {
                             ll_photo_message.setPivotX(screenWidth/2);
                             ll_photo_message.setPivotY(-(screenWidth/2-photoMessageHeight));
