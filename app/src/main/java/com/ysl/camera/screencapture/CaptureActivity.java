@@ -235,7 +235,6 @@ public class CaptureActivity extends AppCompatActivity
     private void takePhoto() {
         ll_take_photo.setVisibility(View.GONE);
         ll_save_delete.setVisibility(View.VISIBLE);
-        Toast.makeText(this,"拍照",Toast.LENGTH_SHORT).show();
         System.out.println("-------->执行拍照");
         //TODO 执行截屏
         myBinder.start();
